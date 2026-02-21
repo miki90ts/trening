@@ -30,7 +30,9 @@ function ResultsPage() {
     user_id: "",
     exercise_id: "",
     category_id: "",
-    attempt_date: new Date().toISOString().slice(0, 16),
+    attempt_date: new Date(Date.now() - new Date().getTimezoneOffset() * 60000)
+      .toISOString()
+      .slice(0, 16),
     notes: "",
   });
   // Režim unosa: 'simple' = jednoredni, 'detailed' = više setova

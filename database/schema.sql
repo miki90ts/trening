@@ -21,6 +21,7 @@ CREATE TABLE users (
   password_hash VARCHAR(255) NOT NULL,
   role ENUM('user', 'admin') NOT NULL DEFAULT 'user',
   is_approved TINYINT(1) NOT NULL DEFAULT 0,
+  show_in_users_list TINYINT(1) NOT NULL DEFAULT 1,
   profile_image VARCHAR(500) DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -164,3 +165,99 @@ INSERT INTO users (first_name, last_name, nickname, email, password_hash, role, 
 ('Jovan', 'Nikolić', 'Joca', 'jovan@fitrecords.rs', '$2a$12$LJ3m4ys2Y3lMILqGMmx6aeNz0BiOsFsmHPk6tQwMOgPMkJrc83PV6', 'user', 1),
 ('Ana', 'Đorđević', 'Anči', 'ana@fitrecords.rs', '$2a$12$LJ3m4ys2Y3lMILqGMmx6aeNz0BiOsFsmHPk6tQwMOgPMkJrc83PV6', 'user', 1),
 ('Milan', 'Cvetković', 'Mikica', 'milan@fitrecords.rs', '$2a$12$LJ3m4ys2Y3lMILqGMmx6aeNz0BiOsFsmHPk6tQwMOgPMkJrc83PV6', 'admin', 1);
+
+-- ============================================
+-- 6. FOOD CATALOG (Admin unosi namirnice/jela)
+-- ============================================
+CREATE TABLE food_items (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  item_type ENUM('food', 'dish') NOT NULL DEFAULT 'food',
+  kcal_per_100g DECIMAL(10,2) NOT NULL,
+  protein_per_100g DECIMAL(10,2) NOT NULL,
+  carbs_per_100g DECIMAL(10,2) NOT NULL,
+  fat_per_100g DECIMAL(10,2) NOT NULL,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_by INT DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+  INDEX idx_food_items_name (name),
+  INDEX idx_food_items_active (is_active)
+) ENGINE=InnoDB;
+
+-- ============================================
+-- 7. FOOD ENTRIES (po danu i obroku)
+-- ============================================
+CREATE TABLE food_entries (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  entry_date DATE NOT NULL,
+  meal_type ENUM('breakfast', 'lunch', 'dinner', 'snack') NOT NULL,
+  notes TEXT DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE KEY uq_food_entry_user_day_meal (user_id, entry_date, meal_type),
+  INDEX idx_food_entries_user_day (user_id, entry_date),
+  INDEX idx_food_entries_meal (meal_type)
+) ENGINE=InnoDB;
+
+-- ============================================
+-- 8. FOOD ENTRY ITEMS (više stavki po obroku)
+-- ============================================
+CREATE TABLE food_entry_items (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  entry_id INT NOT NULL,
+  food_item_id INT DEFAULT NULL,
+  custom_name VARCHAR(255) DEFAULT NULL,
+  amount_grams DECIMAL(10,2) NOT NULL,
+  kcal_per_100g DECIMAL(10,2) NOT NULL,
+  protein_per_100g DECIMAL(10,2) NOT NULL,
+  carbs_per_100g DECIMAL(10,2) NOT NULL,
+  fat_per_100g DECIMAL(10,2) NOT NULL,
+  consumed_kcal DECIMAL(10,2) NOT NULL,
+  consumed_protein DECIMAL(10,2) NOT NULL,
+  consumed_carbs DECIMAL(10,2) NOT NULL,
+  consumed_fat DECIMAL(10,2) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (entry_id) REFERENCES food_entries(id) ON DELETE CASCADE,
+  FOREIGN KEY (food_item_id) REFERENCES food_items(id) ON DELETE SET NULL,
+  INDEX idx_food_entry_items_entry (entry_id),
+  INDEX idx_food_entry_items_food (food_item_id),
+  INDEX idx_food_entry_items_custom_name (custom_name)
+) ENGINE=InnoDB;
+
+-- ============================================
+-- 9. FOOD DAILY TOTALS (sumarno po danu)
+-- ============================================
+CREATE TABLE food_daily_totals (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  entry_date DATE NOT NULL,
+  total_kcal DECIMAL(10,2) NOT NULL DEFAULT 0,
+  total_protein DECIMAL(10,2) NOT NULL DEFAULT 0,
+  total_carbs DECIMAL(10,2) NOT NULL DEFAULT 0,
+  total_fat DECIMAL(10,2) NOT NULL DEFAULT 0,
+  total_items INT NOT NULL DEFAULT 0,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE KEY uq_food_daily_totals_user_day (user_id, entry_date),
+  INDEX idx_food_daily_totals_user_day (user_id, entry_date)
+) ENGINE=InnoDB;
+
+-- ============================================
+-- 10. WEIGHT METRICS (više merenja dnevno)
+-- ============================================
+CREATE TABLE weight_metrics (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  metric_datetime DATETIME NOT NULL,
+  weight_kg DECIMAL(6,2) NOT NULL,
+  notes TEXT DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_weight_metrics_user_datetime (user_id, metric_datetime),
+  INDEX idx_weight_metrics_user_date (user_id, metric_datetime, id)
+) ENGINE=InnoDB;

@@ -12,6 +12,10 @@ const authRouter = require("./routes/auth");
 const scheduleRouter = require("./routes/schedule");
 const calendarRouter = require("./routes/calendar");
 const analyticsRouter = require("./routes/analytics");
+const foodsRouter = require("./routes/foods");
+const nutritionRouter = require("./routes/nutrition");
+const nutritionAnalyticsRouter = require("./routes/nutritionAnalytics");
+const metricsRouter = require("./routes/metrics");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -34,6 +38,10 @@ app.use("/api/leaderboard", leaderboardRouter);
 app.use("/api/schedule", scheduleRouter);
 app.use("/api/calendar", calendarRouter);
 app.use("/api/analytics", analyticsRouter);
+app.use("/api/foods", foodsRouter);
+app.use("/api/nutrition", nutritionRouter);
+app.use("/api/nutrition-analytics", nutritionAnalyticsRouter);
+app.use("/api/metrics", metricsRouter);
 
 // Health check
 app.get("/api/health", (req, res) => {

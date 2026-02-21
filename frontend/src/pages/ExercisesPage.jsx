@@ -2,28 +2,35 @@ import React, { useState } from "react";
 import { useApp } from "../context/AppContext";
 import { useAuth } from "../context/AuthContext";
 import Modal from "../components/common/Modal";
-import Card from "../components/common/Card";
 import Loading from "../components/common/Loading";
 import { toast } from "react-toastify";
-import { FiPlus, FiEdit2, FiTrash2 } from "react-icons/fi";
-import ColorPicker from "../components/common/ColorPicker";
+import { FiPlus } from "react-icons/fi";
+import ExerciseCardsView from "../components/exercises/ExerciseCardsView";
+import CategoriesDataTableView from "../components/exercises/CategoriesDataTableView";
+import CategoryFormModal from "../components/exercises/CategoryFormModal";
 
 function ExercisesPage() {
   const {
     exercises,
+    categories,
     loading,
     addExercise,
     editExercise,
     removeExercise,
     addCategory,
+    editCategory,
+    removeCategory,
   } = useApp();
   const { isAdmin } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
-  const [catModalOpen, setCatModalOpen] = useState(false);
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState("card");
   const [editingExercise, setEditingExercise] = useState(null);
+  const [editingCategory, setEditingCategory] = useState(null);
   const [selectedExercise, setSelectedExercise] = useState(null);
   const [form, setForm] = useState({ name: "", description: "", icon: "💪" });
   const [catForm, setCatForm] = useState({
+    exercise_id: "",
     name: "",
     value_type: "reps",
     has_weight: false,
@@ -80,25 +87,72 @@ function ExercisesPage() {
   };
 
   const openAddCategory = (ex) => {
+    setEditingCategory(null);
     setSelectedExercise(ex);
     setCatForm({
+      exercise_id: String(ex.id),
       name: "",
       value_type: "reps",
       has_weight: false,
       description: "",
       color: "#6366f1",
     });
-    setCatModalOpen(true);
+    setCategoryModalOpen(true);
   };
 
-  const handleAddCategory = async (e) => {
+  const openEditCategory = (category) => {
+    setEditingCategory(category);
+    setSelectedExercise(
+      exercises.find((ex) => ex.id === category.exercise_id) || null,
+    );
+    setCatForm({
+      exercise_id: String(category.exercise_id),
+      name: category.name || "",
+      value_type: category.value_type || "reps",
+      has_weight: Boolean(category.has_weight),
+      description: category.description || "",
+      color: category.color || "#6366f1",
+    });
+    setCategoryModalOpen(true);
+  };
+
+  const handleCategorySubmit = async (e) => {
     e.preventDefault();
     try {
-      await addCategory({ ...catForm, exercise_id: selectedExercise.id });
-      toast.success("Kategorija dodata!");
-      setCatModalOpen(false);
+      if (!catForm.exercise_id) {
+        toast.error("Izaberite vežbu za kategoriju.");
+        return;
+      }
+
+      if (editingCategory) {
+        await editCategory(editingCategory.id, {
+          name: catForm.name,
+          value_type: catForm.value_type,
+          has_weight: catForm.has_weight,
+          description: catForm.description,
+          color: catForm.color,
+        });
+        toast.success("Kategorija ažurirana!");
+      } else {
+        await addCategory({
+          ...catForm,
+          exercise_id: parseInt(catForm.exercise_id, 10),
+        });
+        toast.success("Kategorija dodata!");
+      }
+      setCategoryModalOpen(false);
     } catch (err) {
-      toast.error("Greška: " + err.message);
+      toast.error("Greška: " + (err.response?.data?.error || err.message));
+    }
+  };
+
+  const handleDeleteCategory = async (category) => {
+    if (!window.confirm(`Obrisati kategoriju "${category.name}"?`)) return;
+    try {
+      await removeCategory(category.id);
+      toast.success("Kategorija obrisana!");
+    } catch (err) {
+      toast.error("Greška: " + (err.response?.data?.error || err.message));
     }
   };
 
@@ -110,79 +164,49 @@ function ExercisesPage() {
     <div className="page">
       <div className="page-header">
         <h1 className="page-title">🏋️ Vežbe</h1>
-        {isAdmin && (
-          <button className="btn btn-primary" onClick={openCreate}>
-            <FiPlus /> Dodaj vežbu
-          </button>
-        )}
+        <div style={{ display: "inline-flex", gap: 8, flexWrap: "wrap" }}>
+          <div className="input-mode-toggle">
+            <button
+              type="button"
+              className={`mode-btn ${viewMode === "card" ? "active" : ""}`}
+              onClick={() => setViewMode("card")}
+            >
+              Card prikaz
+            </button>
+            <button
+              type="button"
+              className={`mode-btn ${viewMode === "table" ? "active" : ""}`}
+              onClick={() => setViewMode("table")}
+            >
+              Tabelarni prikaz
+            </button>
+          </div>
+          {isAdmin && (
+            <button className="btn btn-primary" onClick={openCreate}>
+              <FiPlus /> Dodaj vežbu
+            </button>
+          )}
+        </div>
       </div>
 
-      <div className="cards-grid">
-        {exercises.map((ex) => (
-          <Card key={ex.id} className="exercise-card">
-            <div className="exercise-header">
-              <span className="exercise-icon large">{ex.icon}</span>
-              <div>
-                <h3>{ex.name}</h3>
-                {ex.description && (
-                  <p className="exercise-desc">{ex.description}</p>
-                )}
-              </div>
-            </div>
-
-            {ex.categories && ex.categories.length > 0 && (
-              <div className="exercise-categories">
-                <h4>Kategorije:</h4>
-                <ul>
-                  {ex.categories.map((cat) => (
-                    <li key={cat.id}>
-                      <span
-                        className="cat-color-dot"
-                        style={{ backgroundColor: cat.color || "#6366f1" }}
-                      />
-                      <span className="cat-name">{cat.name}</span>
-                      <span className="cat-type">{cat.value_type}</span>
-                      {cat.has_weight ? (
-                        <span className="cat-weight-badge">⚖️</span>
-                      ) : null}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            <div className="card-actions">
-              {isAdmin && (
-                <>
-                  <button
-                    className="btn btn-sm btn-secondary"
-                    onClick={() => openAddCategory(ex)}
-                  >
-                    <FiPlus /> Kategorija
-                  </button>
-                  <button
-                    className="btn-icon"
-                    onClick={() => openEdit(ex)}
-                    title="Izmeni"
-                  >
-                    <FiEdit2 />
-                  </button>
-                  <button
-                    className="btn-icon btn-danger"
-                    onClick={() => handleDelete(ex)}
-                    title="Obriši"
-                  >
-                    <FiTrash2 />
-                  </button>
-                </>
-              )}
-            </div>
-          </Card>
-        ))}
-        {exercises.length === 0 && (
-          <p className="empty-state">Nema vežbi. Dodajte prvu!</p>
-        )}
-      </div>
+      {viewMode === "card" ? (
+        <ExerciseCardsView
+          exercises={exercises}
+          isAdmin={isAdmin}
+          onAddCategory={openAddCategory}
+          onEditExercise={openEdit}
+          onDeleteExercise={handleDelete}
+          onEditCategory={openEditCategory}
+          onDeleteCategory={handleDeleteCategory}
+        />
+      ) : (
+        <CategoriesDataTableView
+          categories={categories}
+          isAdmin={isAdmin}
+          onEditCategory={openEditCategory}
+          onDeleteCategory={handleDeleteCategory}
+        />
+      )}
 
       {/* Exercise modal */}
       <Modal
@@ -241,80 +265,16 @@ function ExercisesPage() {
         </form>
       </Modal>
 
-      {/* Category modal */}
-      <Modal
-        isOpen={catModalOpen}
-        onClose={() => setCatModalOpen(false)}
-        title={`Nova kategorija za: ${selectedExercise?.name}`}
-      >
-        <form onSubmit={handleAddCategory} className="form">
-          <div className="form-group">
-            <label>Naziv kategorije *</label>
-            <input
-              type="text"
-              value={catForm.name}
-              onChange={(e) => setCatForm({ ...catForm, name: e.target.value })}
-              required
-              placeholder="npr. Iz jedne serije"
-            />
-          </div>
-          <div className="form-group">
-            <label>Tip vrednosti</label>
-            <select
-              value={catForm.value_type}
-              onChange={(e) =>
-                setCatForm({ ...catForm, value_type: e.target.value })
-              }
-            >
-              <option value="reps">Ponavljanja (reps)</option>
-              <option value="seconds">Sekunde</option>
-              <option value="minutes">Minuti</option>
-              <option value="meters">Metri</option>
-              <option value="kg">Kilogrami</option>
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={catForm.has_weight}
-                onChange={(e) =>
-                  setCatForm({ ...catForm, has_weight: e.target.checked })
-                }
-              />
-              <span>Koristi tegove (kg) ⚖️</span>
-            </label>
-            <small className="form-hint">
-              Uključite za vežbe sa tegom (bench press, squat, deadlift...)
-            </small>
-          </div>
-
-          <div className="form-group">
-            <label>Opis</label>
-            <textarea
-              value={catForm.description}
-              onChange={(e) =>
-                setCatForm({ ...catForm, description: e.target.value })
-              }
-              placeholder="Opis kategorije"
-              rows={2}
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Boja kategorije</label>
-            <ColorPicker
-              value={catForm.color}
-              onChange={(color) => setCatForm({ ...catForm, color })}
-            />
-          </div>
-
-          <button type="submit" className="btn btn-primary btn-full">
-            Dodaj kategoriju
-          </button>
-        </form>
-      </Modal>
+      <CategoryFormModal
+        isOpen={categoryModalOpen}
+        onClose={() => setCategoryModalOpen(false)}
+        onSubmit={handleCategorySubmit}
+        isEditing={Boolean(editingCategory)}
+        form={catForm}
+        onChange={setCatForm}
+        exercises={exercises}
+        selectedExerciseName={selectedExercise?.name}
+      />
     </div>
   );
 }

@@ -62,6 +62,11 @@ function reducer(state, action) {
           c.id === action.payload.id ? action.payload : c,
         ),
       };
+    case "DELETE_CATEGORY":
+      return {
+        ...state,
+        categories: state.categories.filter((c) => c.id !== action.payload),
+      };
     case "SET_RESULTS":
       return { ...state, results: action.payload };
     case "ADD_RESULT":
@@ -146,6 +151,11 @@ export function AppProvider({ children }) {
       dispatch({ type: "UPDATE_CATEGORY", payload: cat });
       await loadInitialData();
       return cat;
+    },
+    removeCategory: async (id) => {
+      await api.deleteCategory(id);
+      dispatch({ type: "DELETE_CATEGORY", payload: id });
+      await loadInitialData();
     },
 
     // Result actions

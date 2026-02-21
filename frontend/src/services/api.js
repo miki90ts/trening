@@ -124,6 +124,8 @@ export const changeUserRole = (id, role) =>
 
 // ======== USERS ========
 export const getUsers = () => api.get("/users").then((r) => r.data);
+export const getUsersPaginated = (params = {}) =>
+  api.get("/users", { params }).then((r) => r.data);
 export const getUser = (id) => api.get(`/users/${id}`).then((r) => r.data);
 export const createUser = (data) => {
   const fd = new FormData();
@@ -256,5 +258,50 @@ export const completeScheduledWorkout = (id) =>
   api.put(`/schedule/${id}/complete`).then((r) => r.data);
 export const deleteScheduledWorkout = (id) =>
   api.delete(`/schedule/${id}`).then((r) => r.data);
+
+// ======== FOODS ========
+export const getFoods = (params = {}) =>
+  api.get("/foods", { params }).then((r) => r.data);
+export const getFoodsPaginated = (params = {}) =>
+  api.get("/foods", { params }).then((r) => r.data);
+export const getFood = (id) => api.get(`/foods/${id}`).then((r) => r.data);
+export const createFood = (data) =>
+  api.post("/foods", data).then((r) => r.data);
+export const updateFood = (id, data) =>
+  api.put(`/foods/${id}`, data).then((r) => r.data);
+export const deleteFood = (id) =>
+  api.delete(`/foods/${id}`).then((r) => r.data);
+
+// ======== NUTRITION ========
+export const getNutritionDay = (date) =>
+  api.get("/nutrition/day", { params: { date } }).then((r) => r.data);
+export const saveNutritionEntry = (data) =>
+  api.post("/nutrition/entries", data).then((r) => r.data);
+export const deleteNutritionEntry = (entryId) =>
+  api.delete(`/nutrition/entries/${entryId}`).then((r) => r.data);
+export const getNutritionHistory = (params = {}) =>
+  api.get("/nutrition/history", { params }).then((r) => r.data);
+
+// ======== NUTRITION ANALYTICS ========
+export const getNutritionPeriodStats = (params = {}) =>
+  api.get("/nutrition-analytics/period-stats", { params }).then((r) => r.data);
+export const getNutritionSummary = () =>
+  api.get("/nutrition-analytics/summary").then((r) => r.data);
+export const getNutritionTopFoods = (params = {}) =>
+  api.get("/nutrition-analytics/top-foods", { params }).then((r) => r.data);
+
+// ======== METRICS (WEIGHT) ========
+export const getWeightEntries = (params = {}) =>
+  api.get("/metrics/entries", { params }).then((r) => r.data);
+export const createWeightEntry = (data) =>
+  api.post("/metrics/entries", data).then((r) => r.data);
+export const updateWeightEntry = (id, data) =>
+  api.put(`/metrics/entries/${id}`, data).then((r) => r.data);
+export const deleteWeightEntry = (id) =>
+  api.delete(`/metrics/entries/${id}`).then((r) => r.data);
+export const getWeightPeriodStats = (params = {}) =>
+  api.get("/metrics/period-stats", { params }).then((r) => r.data);
+export const getWeightSummary = (params = {}) =>
+  api.get("/metrics/summary", { params }).then((r) => r.data);
 
 export default api;

@@ -138,6 +138,19 @@ router.delete(
   authorize("admin"),
   async (req, res, next) => {
     try {
+      const [usageRows] = await pool.query(
+        "SELECT COUNT(*) AS total FROM workouts WHERE category_id = ?",
+        [req.params.id],
+      );
+      const linkedWorkouts = usageRows[0]?.total || 0;
+
+      if (linkedWorkouts > 0) {
+        return res.status(409).json({
+          error:
+            "Kategorija ne može da se obriše jer je vezana za postojeće workout unose.",
+        });
+      }
+
       const [result] = await pool.query("DELETE FROM categories WHERE id = ?", [
         req.params.id,
       ]);
