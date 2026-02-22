@@ -10,7 +10,7 @@ const CalendarContext = createContext();
 
 const initialState = {
   currentMonth: new Date().toISOString().slice(0, 7), // YYYY-MM
-  calendarData: {}, // { 'YYYY-MM-DD': { workouts: [], scheduled: [] } }
+  calendarData: {}, // { 'YYYY-MM-DD': { workouts: [], activities: [], scheduled: [] } }
   selectedDate: null, // 'YYYY-MM-DD' ili null
   loading: false,
   error: null,
@@ -34,6 +34,7 @@ function reducer(state, action) {
         new Date(action.payload.scheduled_date).toISOString().slice(0, 10);
       const existing = state.calendarData[dateKey] || {
         workouts: [],
+        activities: [],
         scheduled: [],
       };
       return {

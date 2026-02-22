@@ -16,6 +16,9 @@ const foodsRouter = require("./routes/foods");
 const nutritionRouter = require("./routes/nutrition");
 const nutritionAnalyticsRouter = require("./routes/nutritionAnalytics");
 const metricsRouter = require("./routes/metrics");
+const activityTypesRouter = require("./routes/activityTypes");
+const activitiesRouter = require("./routes/activities");
+const activityAnalyticsRouter = require("./routes/activityAnalytics");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -42,6 +45,9 @@ app.use("/api/foods", foodsRouter);
 app.use("/api/nutrition", nutritionRouter);
 app.use("/api/nutrition-analytics", nutritionAnalyticsRouter);
 app.use("/api/metrics", metricsRouter);
+app.use("/api/activity-types", activityTypesRouter);
+app.use("/api/activities", activitiesRouter);
+app.use("/api/activity-analytics", activityAnalyticsRouter);
 
 // Health check
 app.get("/api/health", (req, res) => {

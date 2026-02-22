@@ -12,7 +12,7 @@ const SCORE_SQL = `
 `;
 
 // GET /api/calendar/month?month=YYYY-MM
-// Vraća sve urađene i zakazane treninge za mesec, grupisane po datumu
+// Vraća sve urađene treninge, aktivnosti i zakazane treninge za mesec, grupisane po datumu
 router.get("/month", authenticate, async (req, res, next) => {
   try {
     const { month } = req.query;
@@ -58,13 +58,41 @@ router.get("/month", authenticate, async (req, res, next) => {
       [userId, month],
     );
 
-    // 3. Grupisanje po datumu
+    // 3. Aktivnosti za mesec
+    const [activities] = await pool.query(
+      `
+      SELECT a.id, a.name, a.performed_at,
+             DATE_FORMAT(a.performed_at, '%Y-%m-%d') AS performed_date,
+             a.distance_meters, a.duration_seconds, a.avg_pace_seconds_per_km,
+             a.ascent_meters,
+             t.name AS activity_type_name
+      FROM activities a
+      JOIN activity_types t ON t.id = a.activity_type_id
+      WHERE a.user_id = ?
+        AND t.is_active = 1
+        AND DATE_FORMAT(a.performed_at, '%Y-%m') = ?
+      ORDER BY a.performed_at ASC
+    `,
+      [userId, month],
+    );
+
+    // 4. Grupisanje po datumu
     const byDate = {};
 
     for (const w of workouts) {
       const dateKey = new Date(w.attempt_date).toISOString().slice(0, 10);
-      if (!byDate[dateKey]) byDate[dateKey] = { workouts: [], scheduled: [] };
+      if (!byDate[dateKey]) {
+        byDate[dateKey] = { workouts: [], activities: [], scheduled: [] };
+      }
       byDate[dateKey].workouts.push(w);
+    }
+
+    for (const a of activities) {
+      const dateKey = a.performed_date;
+      if (!byDate[dateKey]) {
+        byDate[dateKey] = { workouts: [], activities: [], scheduled: [] };
+      }
+      byDate[dateKey].activities.push(a);
     }
 
     for (const s of scheduled) {
@@ -75,7 +103,9 @@ router.get("/month", authenticate, async (req, res, next) => {
         String(d.getDate()).padStart(2, "0"),
       ].join("-");
 
-      if (!byDate[dateKey]) byDate[dateKey] = { workouts: [], scheduled: [] };
+      if (!byDate[dateKey]) {
+        byDate[dateKey] = { workouts: [], activities: [], scheduled: [] };
+      }
       byDate[dateKey].scheduled.push(s);
     }
 

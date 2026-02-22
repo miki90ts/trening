@@ -20,6 +20,11 @@ import AnalyticsPage from "./pages/AnalyticsPage";
 import NutritionIntakePage from "./pages/NutritionIntakePage";
 import NutritionHistoryPage from "./pages/NutritionHistoryPage";
 import MetricsPage from "./pages/MetricsPage";
+import ActivityPage from "./pages/ActivityPage";
+import ActivityStatsPage from "./pages/ActivityStatsPage";
+import ActivityFormPage from "./pages/ActivityFormPage";
+import ActivityDetailPage from "./pages/ActivityDetailPage";
+import AdminActivityTypesPage from "./pages/AdminActivityTypesPage";
 
 function App() {
   const { isAuthenticated } = useAuth();
@@ -140,6 +145,46 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/activity"
+            element={
+              <ProtectedRoute>
+                <ActivityPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/activity/stats"
+            element={
+              <ProtectedRoute>
+                <ActivityStatsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/activity/new"
+            element={
+              <ProtectedRoute>
+                <ActivityFormPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/activity/:id/edit"
+            element={
+              <ProtectedRoute>
+                <ActivityFormPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/activity/:id"
+            element={
+              <ProtectedRoute>
+                <ActivityDetailPage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Admin rute */}
           <Route
@@ -163,6 +208,14 @@ function App() {
             element={
               <ProtectedRoute requiredRole="admin">
                 <AdminFoodCatalogPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/activity-types"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminActivityTypesPage />
               </ProtectedRoute>
             }
           />

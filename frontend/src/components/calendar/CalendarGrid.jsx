@@ -33,7 +33,11 @@ function CalendarGrid({
   // Dani u mesecu
   for (let day = 1; day <= daysInMonth; day++) {
     const dateStr = `${year}-${String(monthNum).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    const dayData = calendarData[dateStr] || { workouts: [], scheduled: [] };
+    const dayData = calendarData[dateStr] || {
+      workouts: [],
+      activities: [],
+      scheduled: [],
+    };
     cells.push({ day, dateStr, ...dayData, key: dateStr });
   }
 
@@ -63,8 +67,9 @@ function CalendarGrid({
           const isToday = cell.dateStr === today;
           const isSelected = cell.dateStr === selectedDate;
           const hasWorkouts = cell.workouts && cell.workouts.length > 0;
+          const hasActivities = cell.activities && cell.activities.length > 0;
           const hasScheduled = cell.scheduled && cell.scheduled.length > 0;
-          const hasEvents = hasWorkouts || hasScheduled;
+          const hasEvents = hasWorkouts || hasActivities || hasScheduled;
 
           return (
             <div
@@ -96,7 +101,20 @@ function CalendarGrid({
                         type="scheduled"
                       />
                     ))}
-                {(cell.workouts?.length > 3 || cell.scheduled?.length > 3) && (
+                {hasActivities &&
+                  cell.activities
+                    .slice(0, 3)
+                    .map((a, i) => (
+                      <WorkoutDot
+                        key={`a-${a.id || i}`}
+                        color="var(--accent-success)"
+                        title={`🏃 ${a.activity_type_name} — ${a.name || "Aktivnost"}`}
+                        type="activity"
+                      />
+                    ))}
+                {(cell.workouts?.length > 3 ||
+                  cell.activities?.length > 3 ||
+                  cell.scheduled?.length > 3) && (
                   <span className="calendar-cell-more">+</span>
                 )}
               </div>

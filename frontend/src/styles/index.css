@@ -696,8 +696,33 @@ a {
   gap: 16px;
 }
 
+.form-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.form-grid.two-cols {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.form-grid.three-cols {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .form-card {
   margin-bottom: 32px;
+}
+
+.period-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.chart-wrapper {
+  width: 100%;
+  min-height: 280px;
 }
 
 .icon-picker {
@@ -2839,6 +2864,12 @@ a {
   height: 8px;
 }
 
+.workout-dot--activity {
+  width: 9px;
+  height: 9px;
+  box-shadow: 0 0 0 1px var(--bg-card);
+}
+
 /* Calendar Sidebar / Day Detail */
 .calendar-sidebar {
   position: sticky;
@@ -3028,6 +3059,15 @@ a {
   padding-right: 12px;
 }
 
+.calendar-workout-item--clickable {
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.calendar-workout-item--clickable:hover {
+  transform: translateY(-1px);
+}
+
 .calendar-workout-info {
   flex: 1;
   display: flex;
@@ -3055,6 +3095,20 @@ a {
   text-transform: uppercase;
 }
 
+.calendar-activity-metrics {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  min-width: 150px;
+}
+
+.calendar-activity-metrics span {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  line-height: 1.2;
+}
+
 /* Schedule Form */
 .schedule-form {
   display: flex;
@@ -3075,6 +3129,52 @@ a {
 
 .schedule-form-actions .btn {
   flex: 1;
+}
+
+.split-multi-inputs {
+  display: grid;
+  gap: 6px;
+}
+
+.split-multi-inputs-two {
+  grid-template-columns: 100px 100px;
+}
+
+.split-multi-inputs-three {
+  grid-template-columns: 100px 100px 100px;
+}
+
+.activity-main-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+
+.activity-main-metric-card {
+  margin: 0;
+}
+
+.activity-composite-row {
+  display: grid;
+  gap: 8px;
+}
+
+.activity-composite-row-two {
+  grid-template-columns: 1fr 1fr;
+}
+
+.activity-composite-row-three {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.activity-composite-row .form-group,
+.split-inline-group {
+  margin: 0;
+}
+
+.activity-composite-row .form-group label,
+.split-inline-group label {
+  font-size: 0.75rem;
 }
 
 /* ============================================
@@ -3442,6 +3542,22 @@ a {
   }
 
   .schedule-form .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .activity-main-metrics {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .activity-composite-row-two,
+  .activity-composite-row-three {
+    grid-template-columns: 1fr;
+  }
+
+  .split-multi-inputs-two,
+  .split-multi-inputs-three {
     grid-template-columns: 1fr;
   }
 }

@@ -304,4 +304,36 @@ export const getWeightPeriodStats = (params = {}) =>
 export const getWeightSummary = (params = {}) =>
   api.get("/metrics/summary", { params }).then((r) => r.data);
 
+// ======== ACTIVITY TYPES ========
+export const getActivityTypes = (params = {}) =>
+  api.get("/activity-types", { params }).then((r) => r.data);
+export const createActivityType = (data) =>
+  api.post("/activity-types", data).then((r) => r.data);
+export const updateActivityType = (id, data) =>
+  api.put(`/activity-types/${id}`, data).then((r) => r.data);
+export const deleteActivityType = (id) =>
+  api.delete(`/activity-types/${id}`).then((r) => r.data);
+
+// ======== ACTIVITIES ========
+export const getActivities = (params = {}) =>
+  api.get("/activities", { params }).then((r) => r.data);
+export const getActivityDetail = (id) =>
+  api.get(`/activities/${id}`).then((r) => r.data);
+export const getActivityExportData = (id) =>
+  api.get(`/activities/${id}/export-data`).then((r) => r.data);
+export const createActivity = (data) =>
+  api.post("/activities", data).then((r) => r.data);
+export const updateActivity = (id, data) =>
+  api.put(`/activities/${id}`, data).then((r) => r.data);
+export const deleteActivity = (id) =>
+  api.delete(`/activities/${id}`).then((r) => r.data);
+
+// ======== ACTIVITY ANALYTICS ========
+export const getActivityPeriodStats = (params = {}) =>
+  api.get("/activity-analytics/period-stats", { params }).then((r) => r.data);
+export const getActivityPeriodExportData = (params = {}) =>
+  api.get("/activity-analytics/period-export", { params }).then((r) => r.data);
+export const getActivitySummary = () =>
+  api.get("/activity-analytics/summary").then((r) => r.data);
+
 export default api;

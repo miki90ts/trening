@@ -1,8 +1,14 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { FiPlus, FiClock } from "react-icons/fi";
 import ScheduleItem from "./ScheduleItem";
 import ScheduleForm from "./ScheduleForm";
 import ScheduledWorkoutEditModal from "./ScheduledWorkoutEditModal";
+import {
+  formatDistanceKm,
+  formatDuration,
+  formatPace,
+} from "../activity/activityUtils";
 
 const DAY_NAMES = [
   "Nedelja",
@@ -37,12 +43,17 @@ function CalendarDayDetail({
   onCompleteScheduled,
   onClose,
 }) {
+  const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
 
   if (!selectedDate) return null;
 
-  const dayData = calendarData[selectedDate] || { workouts: [], scheduled: [] };
+  const dayData = calendarData[selectedDate] || {
+    workouts: [],
+    activities: [],
+    scheduled: [],
+  };
   const dateObj = new Date(selectedDate + "T00:00:00");
   const dayName = DAY_NAMES[dateObj.getDay()];
   const formattedDate = `${dateObj.getDate()}. ${MONTH_NAMES[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
@@ -141,7 +152,56 @@ function CalendarDayDetail({
         </div>
       )}
 
+      {/* Activity za dan */}
+      {dayData.activities.length > 0 && (
+        <div className="calendar-day-section">
+          <h4 className="calendar-day-section-title">
+            🏃 Activity ({dayData.activities.length})
+          </h4>
+          <div className="calendar-day-items">
+            {dayData.activities.map((a) => (
+              <div
+                key={a.id}
+                className="calendar-workout-item calendar-workout-item--clickable"
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate(`/activity/${a.id}`)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    navigate(`/activity/${a.id}`);
+                  }
+                }}
+                title="Otvori detalj aktivnosti"
+              >
+                <div
+                  className="schedule-item-color"
+                  style={{ backgroundColor: "var(--accent-success)" }}
+                />
+                <div className="calendar-workout-info">
+                  <span className="schedule-item-icon">🏃</span>
+
+                  <span className="schedule-item-exercise">
+                    {a.activity_type_name}
+                  </span>
+                  <span className="schedule-item-category">
+                    {a.name || "Aktivnost"}
+                  </span>
+                </div>
+                <div className="calendar-activity-metrics">
+                  <span>{formatDistanceKm(a.distance_meters)} km</span>
+                  <span>{formatDuration(a.duration_seconds)}</span>
+                  <span>Pace: {formatPace(a.avg_pace_seconds_per_km)}</span>
+                  <span>Ascent: {a.ascent_meters ?? 0} m</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {dayData.workouts.length === 0 &&
+        dayData.activities.length === 0 &&
         dayData.scheduled.length === 0 &&
         !showForm && (
           <p className="empty-state">Nema aktivnosti za ovaj dan.</p>

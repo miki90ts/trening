@@ -46,6 +46,7 @@ function Navbar() {
     { to: "/leaderboard", label: "Rang lista", icon: <FiBarChart2 /> },
     { to: "/analytics", label: "Analitika", icon: <FiTrendingUp /> },
     { to: "/metrics", label: "Metrics", icon: <FiActivity /> },
+    { to: "/activity", label: "Activity", icon: <FiActivity /> },
     { to: "/timer", label: "Timer", icon: <FiClock /> },
   ];
 
@@ -60,6 +61,11 @@ function Navbar() {
       to: "/admin/food-catalog",
       label: "Food Catalog",
       icon: <FiBookOpen />,
+    },
+    {
+      to: "/admin/activity-types",
+      label: "Activity Types",
+      icon: <FiActivity />,
     },
   ];
 
