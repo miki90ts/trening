@@ -21,8 +21,10 @@ import {
   FiBookOpen,
   FiChevronDown,
   FiChevronRight,
+  FiMessageSquare,
 } from "react-icons/fi";
 import NotificationBell from "../notifications/NotificationBell";
+import ContactModal from "../common/ContactModal";
 
 function Navbar() {
   const { darkMode, toggleTheme } = useTheme();
@@ -30,6 +32,7 @@ function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
   const [nutritionOpen, setNutritionOpen] = useState(
     location.pathname.startsWith("/nutrition"),
   );
@@ -112,6 +115,14 @@ function Navbar() {
 
         <div className="navbar-actions">
           <NotificationBell />
+
+          <button
+            className="theme-toggle"
+            onClick={() => setContactOpen(true)}
+            title="Kontakt podrška"
+          >
+            <FiMessageSquare />
+          </button>
 
           <button
             className="theme-toggle"
@@ -235,6 +246,11 @@ function Navbar() {
           )}
         </div>
       </aside>
+
+      <ContactModal
+        isOpen={contactOpen}
+        onClose={() => setContactOpen(false)}
+      />
     </>
   );
 }

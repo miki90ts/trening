@@ -336,4 +336,8 @@ export const getActivityPeriodExportData = (params = {}) =>
 export const getActivitySummary = () =>
   api.get("/activity-analytics/summary").then((r) => r.data);
 
+// ======== CONTACT / SUPPORT ========
+export const sendContactMessage = (data) =>
+  api.post("/contact", data).then((r) => r.data);
+
 export default api;

@@ -19,6 +19,7 @@ const metricsRouter = require("./routes/metrics");
 const activityTypesRouter = require("./routes/activityTypes");
 const activitiesRouter = require("./routes/activities");
 const activityAnalyticsRouter = require("./routes/activityAnalytics");
+const contactRouter = require("./routes/contact");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -48,6 +49,7 @@ app.use("/api/metrics", metricsRouter);
 app.use("/api/activity-types", activityTypesRouter);
 app.use("/api/activities", activitiesRouter);
 app.use("/api/activity-analytics", activityAnalyticsRouter);
+app.use("/api/contact", contactRouter);
 
 // Health check
 app.get("/api/health", (req, res) => {
