@@ -25,6 +25,11 @@ import ActivityStatsPage from "./pages/ActivityStatsPage";
 import ActivityFormPage from "./pages/ActivityFormPage";
 import ActivityDetailPage from "./pages/ActivityDetailPage";
 import AdminActivityTypesPage from "./pages/AdminActivityTypesPage";
+import PlansPage from "./pages/PlansPage";
+import PlanBuilderPage from "./pages/PlanBuilderPage";
+import SessionExecutionPage from "./pages/SessionExecutionPage";
+import SessionDetailPage from "./pages/SessionDetailPage";
+import StepsPage from "./pages/StepsPage";
 
 function App() {
   const { isAuthenticated } = useAuth();
@@ -146,6 +151,14 @@ function App() {
             }
           />
           <Route
+            path="/metrics/steps"
+            element={
+              <ProtectedRoute>
+                <StepsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/activity"
             element={
               <ProtectedRoute>
@@ -182,6 +195,48 @@ function App() {
             element={
               <ProtectedRoute>
                 <ActivityDetailPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Plan rute */}
+          <Route
+            path="/plans"
+            element={
+              <ProtectedRoute>
+                <PlansPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/plans/new"
+            element={
+              <ProtectedRoute>
+                <PlanBuilderPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/plans/:id/edit"
+            element={
+              <ProtectedRoute>
+                <PlanBuilderPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/plans/session/:sessionId"
+            element={
+              <ProtectedRoute>
+                <SessionExecutionPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/plans/session/:sessionId/detail"
+            element={
+              <ProtectedRoute>
+                <SessionDetailPage />
               </ProtectedRoute>
             }
           />

@@ -304,6 +304,24 @@ export const getWeightPeriodStats = (params = {}) =>
 export const getWeightSummary = (params = {}) =>
   api.get("/metrics/summary", { params }).then((r) => r.data);
 
+// ======== STEPS ========
+export const getStepEntries = (params = {}) =>
+  api.get("/steps/entries", { params }).then((r) => r.data);
+export const createStepEntry = (data) =>
+  api.post("/steps/entries", data).then((r) => r.data);
+export const updateStepEntry = (id, data) =>
+  api.put(`/steps/entries/${id}`, data).then((r) => r.data);
+export const deleteStepEntry = (id) =>
+  api.delete(`/steps/entries/${id}`).then((r) => r.data);
+export const getStepPeriodStats = (params = {}) =>
+  api.get("/steps/period-stats", { params }).then((r) => r.data);
+export const getStepSummary = (params = {}) =>
+  api.get("/steps/summary", { params }).then((r) => r.data);
+export const getStepRecords = () =>
+  api.get("/steps/records").then((r) => r.data);
+export const getStepGoal = () =>
+  api.get("/steps/goal").then((r) => r.data);
+
 // ======== ACTIVITY TYPES ========
 export const getActivityTypes = (params = {}) =>
   api.get("/activity-types", { params }).then((r) => r.data);
@@ -339,5 +357,31 @@ export const getActivitySummary = () =>
 // ======== CONTACT / SUPPORT ========
 export const sendContactMessage = (data) =>
   api.post("/contact", data).then((r) => r.data);
+
+// ======== WORKOUT PLANS ========
+export const getPlans = () => api.get("/plans").then((r) => r.data);
+export const getPlan = (id) => api.get(`/plans/${id}`).then((r) => r.data);
+export const createPlan = (data) =>
+  api.post("/plans", data).then((r) => r.data);
+export const updatePlan = (id, data) =>
+  api.put(`/plans/${id}`, data).then((r) => r.data);
+export const deletePlan = (id) =>
+  api.delete(`/plans/${id}`).then((r) => r.data);
+
+// ======== PLAN SESSIONS ========
+export const schedulePlan = (planId, data) =>
+  api.post(`/plans/${planId}/schedule`, data).then((r) => r.data);
+export const getSessions = (params = {}) =>
+  api.get("/plans/sessions/list", { params }).then((r) => r.data);
+export const getSession = (sessionId) =>
+  api.get(`/plans/sessions/${sessionId}`).then((r) => r.data);
+export const startSession = (sessionId) =>
+  api.put(`/plans/sessions/${sessionId}/start`).then((r) => r.data);
+export const updateSession = (sessionId, data) =>
+  api.put(`/plans/sessions/${sessionId}`, data).then((r) => r.data);
+export const completeSession = (sessionId) =>
+  api.post(`/plans/sessions/${sessionId}/complete`).then((r) => r.data);
+export const deleteSession = (sessionId) =>
+  api.delete(`/plans/sessions/${sessionId}`).then((r) => r.data);
 
 export default api;

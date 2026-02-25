@@ -37,6 +37,7 @@ function CalendarGrid({
       workouts: [],
       activities: [],
       scheduled: [],
+      sessions: [],
     };
     cells.push({ day, dateStr, ...dayData, key: dateStr });
   }
@@ -69,7 +70,8 @@ function CalendarGrid({
           const hasWorkouts = cell.workouts && cell.workouts.length > 0;
           const hasActivities = cell.activities && cell.activities.length > 0;
           const hasScheduled = cell.scheduled && cell.scheduled.length > 0;
-          const hasEvents = hasWorkouts || hasActivities || hasScheduled;
+          const hasSessions = cell.sessions && cell.sessions.length > 0;
+          const hasEvents = hasWorkouts || hasActivities || hasScheduled || hasSessions;
 
           return (
             <div
@@ -110,6 +112,17 @@ function CalendarGrid({
                         color="var(--accent-success)"
                         title={`🏃 ${a.activity_type_name} — ${a.name || "Aktivnost"}`}
                         type="activity"
+                      />
+                    ))}
+                {hasSessions &&
+                  cell.sessions
+                    .slice(0, 3)
+                    .map((ps, i) => (
+                      <WorkoutDot
+                        key={`ps-${ps.id || i}`}
+                        color="var(--accent-primary)"
+                        title={`📋 ${ps.plan_name} (${ps.status === 'completed' ? 'završeno' : ps.status === 'in_progress' ? 'u toku' : 'zakazano'})`}
+                        type={ps.status === 'completed' ? 'workout' : 'scheduled'}
                       />
                     ))}
                 {(cell.workouts?.length > 3 ||

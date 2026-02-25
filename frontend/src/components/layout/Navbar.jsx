@@ -22,6 +22,7 @@ import {
   FiChevronDown,
   FiChevronRight,
   FiMessageSquare,
+  FiClipboard,
 } from "react-icons/fi";
 import NotificationBell from "../notifications/NotificationBell";
 import ContactModal from "../common/ContactModal";
@@ -36,6 +37,9 @@ function Navbar() {
   const [nutritionOpen, setNutritionOpen] = useState(
     location.pathname.startsWith("/nutrition"),
   );
+  const [metricsOpen, setMetricsOpen] = useState(
+    location.pathname.startsWith("/metrics"),
+  );
   const [adminOpen, setAdminOpen] = useState(
     location.pathname.startsWith("/admin"),
   );
@@ -48,9 +52,13 @@ function Navbar() {
     { to: "/calendar", label: "Kalendar", icon: <FiCalendar /> },
     { to: "/leaderboard", label: "Rang lista", icon: <FiBarChart2 /> },
     { to: "/analytics", label: "Analitika", icon: <FiTrendingUp /> },
-    { to: "/metrics", label: "Metrics", icon: <FiActivity /> },
     { to: "/activity", label: "Activity", icon: <FiActivity /> },
-    { to: "/timer", label: "Timer", icon: <FiClock /> },
+    { to: "/plans", label: "Planovi", icon: <FiClipboard /> },
+  ];
+
+  const metricsLinks = [
+    { to: "/metrics", label: "Kilaža", icon: <FiTrendingUp /> },
+    { to: "/metrics/steps", label: "Koraci", icon: <FiActivity /> },
   ];
 
   const nutritionLinks = [
@@ -81,6 +89,9 @@ function Navbar() {
   useEffect(() => {
     if (location.pathname.startsWith("/nutrition")) {
       setNutritionOpen(true);
+    }
+    if (location.pathname.startsWith("/metrics")) {
+      setMetricsOpen(true);
     }
     if (location.pathname.startsWith("/admin")) {
       setAdminOpen(true);
@@ -114,6 +125,16 @@ function Navbar() {
         </div>
 
         <div className="navbar-actions">
+          <Link
+            key="/timer"
+            to="/timer"
+            className={`nav-link ${isLinkActive("/timer") ? "active" : ""}`}
+            onClick={closeMobileSidebar}
+          >
+            <FiClock />
+            <span>Timer</span>
+          </Link>
+
           <NotificationBell />
 
           <button
@@ -186,6 +207,33 @@ function Navbar() {
               <span>{link.label}</span>
             </Link>
           ))}
+
+          <button
+            className={`nav-link nav-dropdown-trigger ${location.pathname.startsWith("/metrics") ? "active" : ""}`}
+            onClick={() => setMetricsOpen((prev) => !prev)}
+          >
+            <span className="nav-link-content">
+              <FiTrendingUp />
+              <span>Metrics</span>
+            </span>
+            {metricsOpen ? <FiChevronDown /> : <FiChevronRight />}
+          </button>
+
+          {metricsOpen && (
+            <div className="nav-dropdown-menu">
+              {metricsLinks.map((link) => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className={`nav-link nav-link-child ${isLinkActive(link.to) ? "active" : ""}`}
+                  onClick={closeMobileSidebar}
+                >
+                  {link.icon}
+                  <span>{link.label}</span>
+                </Link>
+              ))}
+            </div>
+          )}
 
           <button
             className={`nav-link nav-dropdown-trigger ${location.pathname.startsWith("/nutrition") ? "active" : ""}`}

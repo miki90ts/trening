@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiPlus, FiClock } from "react-icons/fi";
+import { FiPlus, FiClock, FiClipboard, FiPlay, FiCheckCircle } from "react-icons/fi";
 import ScheduleItem from "./ScheduleItem";
 import ScheduleForm from "./ScheduleForm";
 import ScheduledWorkoutEditModal from "./ScheduledWorkoutEditModal";
@@ -53,6 +53,7 @@ function CalendarDayDetail({
     workouts: [],
     activities: [],
     scheduled: [],
+    sessions: [],
   };
   const dateObj = new Date(selectedDate + "T00:00:00");
   const dayName = DAY_NAMES[dateObj.getDay()];
@@ -200,9 +201,60 @@ function CalendarDayDetail({
         </div>
       )}
 
+      {/* Plan sesije */}
+      {dayData.sessions && dayData.sessions.length > 0 && (
+        <div className="calendar-day-section">
+          <h4 className="calendar-day-section-title">
+            <FiClipboard /> Plan sesije ({dayData.sessions.length})
+          </h4>
+          <div className="calendar-day-items">
+            {dayData.sessions.map((ps) => (
+              <div
+                key={ps.id}
+                className="calendar-workout-item calendar-workout-item--clickable"
+                role="button"
+                tabIndex={0}
+                onClick={() => {
+                  if (ps.status === 'completed') navigate(`/plans/session/${ps.id}/detail`);
+                  else if (ps.status === 'in_progress') navigate(`/plans/session/${ps.id}`);
+                  else navigate('/plans');
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    if (ps.status === 'completed') navigate(`/plans/session/${ps.id}/detail`);
+                    else if (ps.status === 'in_progress') navigate(`/plans/session/${ps.id}`);
+                    else navigate('/plans');
+                  }
+                }}
+                title={ps.plan_name}
+              >
+                <div
+                  className="schedule-item-color"
+                  style={{ backgroundColor: "var(--accent-primary)" }}
+                />
+                <div className="calendar-workout-info">
+                  <span className="schedule-item-icon">📋</span>
+                  <div>
+                    <span className="schedule-item-exercise">{ps.plan_name}</span>
+                    <span className="schedule-item-category">{ps.exercise_count} vežbi</span>
+                  </div>
+                </div>
+                <div className="calendar-workout-score">
+                  {ps.status === 'completed' && <><FiCheckCircle style={{ color: 'var(--accent-success)' }} /> <span>Završeno</span></>}
+                  {ps.status === 'in_progress' && <><FiPlay style={{ color: 'var(--accent-warning)' }} /> <span>U toku</span></>}
+                  {ps.status === 'scheduled' && <><FiClock /> <span>Zakazano</span></>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {dayData.workouts.length === 0 &&
         dayData.activities.length === 0 &&
         dayData.scheduled.length === 0 &&
+        (!dayData.sessions || dayData.sessions.length === 0) &&
         !showForm && (
           <p className="empty-state">Nema aktivnosti za ovaj dan.</p>
         )}
