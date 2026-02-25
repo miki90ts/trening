@@ -23,6 +23,7 @@ import {
   FiChevronRight,
   FiMessageSquare,
   FiClipboard,
+  FiDroplet,
 } from "react-icons/fi";
 import NotificationBell from "../notifications/NotificationBell";
 import ContactModal from "../common/ContactModal";
@@ -64,6 +65,7 @@ function Navbar() {
   const nutritionLinks = [
     { to: "/nutrition/intake", label: "Unos hrane", icon: <FiPieChart /> },
     { to: "/nutrition/history", label: "Pregled hrane", icon: <FiBookOpen /> },
+    { to: "/nutrition/hydration", label: "Hidratacija", icon: <FiDroplet /> },
   ];
 
   const adminLinks = [
@@ -241,7 +243,7 @@ function Navbar() {
           >
             <span className="nav-link-content">
               <FiPieChart />
-              <span>Ishrana</span>
+              <span>Ishrana i hidratacija</span>
             </span>
             {nutritionOpen ? <FiChevronDown /> : <FiChevronRight />}
           </button>

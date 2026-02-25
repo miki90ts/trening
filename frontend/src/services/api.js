@@ -319,8 +319,27 @@ export const getStepSummary = (params = {}) =>
   api.get("/steps/summary", { params }).then((r) => r.data);
 export const getStepRecords = () =>
   api.get("/steps/records").then((r) => r.data);
-export const getStepGoal = () =>
-  api.get("/steps/goal").then((r) => r.data);
+export const getStepGoal = () => api.get("/steps/goal").then((r) => r.data);
+
+// ======== HYDRATION ========
+export const getHydrationEntries = (params = {}) =>
+  api.get("/hydration/entries", { params }).then((r) => r.data);
+export const createHydrationEntry = (data) =>
+  api.post("/hydration/entries", data).then((r) => r.data);
+export const updateHydrationEntry = (id, data) =>
+  api.put(`/hydration/entries/${id}`, data).then((r) => r.data);
+export const deleteHydrationEntry = (id) =>
+  api.delete(`/hydration/entries/${id}`).then((r) => r.data);
+export const getHydrationPeriodStats = (params = {}) =>
+  api.get("/hydration/period-stats", { params }).then((r) => r.data);
+export const getHydrationSummary = (params = {}) =>
+  api.get("/hydration/summary", { params }).then((r) => r.data);
+export const getHydrationRecords = () =>
+  api.get("/hydration/records").then((r) => r.data);
+export const getHydrationStreak = () =>
+  api.get("/hydration/streak").then((r) => r.data);
+export const getHydrationGoal = () =>
+  api.get("/hydration/goal").then((r) => r.data);
 
 // ======== ACTIVITY TYPES ========
 export const getActivityTypes = (params = {}) =>

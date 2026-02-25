@@ -30,6 +30,7 @@ import PlanBuilderPage from "./pages/PlanBuilderPage";
 import SessionExecutionPage from "./pages/SessionExecutionPage";
 import SessionDetailPage from "./pages/SessionDetailPage";
 import StepsPage from "./pages/StepsPage";
+import HydrationPage from "./pages/HydrationPage";
 
 function App() {
   const { isAuthenticated } = useAuth();
@@ -139,6 +140,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <NutritionHistoryPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/nutrition/hydration"
+            element={
+              <ProtectedRoute>
+                <HydrationPage />
               </ProtectedRoute>
             }
           />
