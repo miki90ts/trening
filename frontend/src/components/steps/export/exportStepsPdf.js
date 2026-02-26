@@ -1,5 +1,6 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import { toYmd } from "../stepsUtils";
 
 export function exportStepsPdf({ summary, periodStats, records, rows, periodLabel }) {
   const doc = new jsPDF();
@@ -64,7 +65,7 @@ export function exportStepsPdf({ summary, periodStats, records, rows, periodLabe
       startY: doc.lastAutoTable.finalY + 8,
       head: [["Datum", "Koraci", "Cilj", "Napomena"]],
       body: rows.slice(0, 200).map((row) => [
-        new Date(row.step_date).toLocaleDateString("sr-RS"),
+        new Date(`${toYmd(row.step_date)}T00:00:00`).toLocaleDateString("sr-RS"),
         parseInt(row.step_count).toLocaleString("sr-RS"),
         parseInt(row.goal).toLocaleString("sr-RS"),
         row.notes || "",
@@ -73,5 +74,5 @@ export function exportStepsPdf({ summary, periodStats, records, rows, periodLabe
     });
   }
 
-  doc.save(`steps-report-${new Date().toISOString().slice(0, 10)}.pdf`);
+  doc.save(`steps-report-${toYmd(new Date())}.pdf`);
 }

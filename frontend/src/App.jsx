@@ -31,6 +31,7 @@ import SessionExecutionPage from "./pages/SessionExecutionPage";
 import SessionDetailPage from "./pages/SessionDetailPage";
 import StepsPage from "./pages/StepsPage";
 import HydrationPage from "./pages/HydrationPage";
+import SleepPage from "./pages/SleepPage";
 
 function App() {
   const { isAuthenticated } = useAuth();
@@ -152,7 +153,7 @@ function App() {
             }
           />
           <Route
-            path="/metrics"
+            path="/metrics/weight"
             element={
               <ProtectedRoute>
                 <MetricsPage />
@@ -164,6 +165,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <StepsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/metrics/sleep"
+            element={
+              <ProtectedRoute>
+                <SleepPage />
               </ProtectedRoute>
             }
           />

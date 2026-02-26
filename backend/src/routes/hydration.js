@@ -235,7 +235,7 @@ router.get("/period-stats", authenticate, async (req, res, next) => {
           GROUP_CONCAT(DISTINCT drink_type) AS drink_types
         FROM hydration_entries
         WHERE user_id = ? AND entry_date >= ? AND entry_date <= ?
-        GROUP BY month_key
+        GROUP BY month_key, bucket_key
         ORDER BY month_key ASC
       `,
         [req.user.id, range.start, range.end],

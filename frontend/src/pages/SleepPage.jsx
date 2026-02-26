@@ -2,24 +2,23 @@ import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import Card from "../components/common/Card";
 import Modal from "../components/common/Modal";
-import HydrationPeriodControls from "../components/hydration/HydrationPeriodControls";
-import HydrationSummaryCards from "../components/hydration/HydrationSummaryCards";
-import HydrationChart from "../components/hydration/HydrationChart";
-import HydrationTable from "../components/hydration/HydrationTable";
-import HydrationRecords from "../components/hydration/HydrationRecords";
-import HydrationStreakCard from "../components/hydration/HydrationStreakCard";
-import HydrationQuickAdd from "../components/hydration/HydrationQuickAdd";
-import HydrationEntryForm from "../components/hydration/HydrationEntryForm";
+import SleepPeriodControls from "../components/sleep/SleepPeriodControls";
+import SleepSummaryCards from "../components/sleep/SleepSummaryCards";
+import SleepChart from "../components/sleep/SleepChart";
+import SleepTable from "../components/sleep/SleepTable";
+import SleepRecords from "../components/sleep/SleepRecords";
+import SleepStreakCard from "../components/sleep/SleepStreakCard";
+import SleepEntryForm from "../components/sleep/SleepEntryForm";
 import {
-  formatHydrationPeriodTitle,
+  formatSleepPeriodTitle,
   getPeriodBounds,
-  shiftHydrationAnchor,
+  shiftSleepAnchor,
   toYmd,
-} from "../components/hydration/hydrationUtils";
-import { useHydration } from "../context/HydrationContext";
-import { exportHydrationPdf } from "../components/hydration/export/exportHydrationPdf";
+} from "../components/sleep/sleepUtils";
+import { useSleep } from "../context/SleepContext";
+import { exportSleepPdf } from "../components/sleep/export/exportSleepPdf";
 
-function HydrationPage() {
+function SleepPage() {
   const {
     entries,
     periodStats,
@@ -37,7 +36,7 @@ function HydrationPage() {
     addEntry,
     editEntry,
     removeEntry,
-  } = useHydration();
+  } = useSleep();
 
   const [granularity, setGranularity] = useState("7d");
   const [anchor, setAnchor] = useState(toYmd(new Date()));
@@ -46,7 +45,7 @@ function HydrationPage() {
   const [saving, setSaving] = useState(false);
 
   const periodLabel = useMemo(
-    () => formatHydrationPeriodTitle(granularity, anchor),
+    () => formatSleepPeriodTitle(granularity, anchor),
     [granularity, anchor],
   );
 
@@ -60,7 +59,7 @@ function HydrationPage() {
         loadEntries({
           start_date: bounds.start,
           end_date: bounds.end,
-          limit: 2000,
+          limit: 1000,
         }),
         loadRecords(),
         loadStreak(),
@@ -97,7 +96,7 @@ function HydrationPage() {
         toast.success("Unos je uspešno izmenjen.");
       } else {
         await addEntry(payload);
-        toast.success("Tečnost je uspešno dodana.");
+        toast.success("San je uspešno dodat.");
       }
       handleCloseModal();
       await loadAll();
@@ -108,24 +107,8 @@ function HydrationPage() {
     }
   };
 
-  const handleQuickAdd = async (option) => {
-    try {
-      await addEntry({
-        entry_date: toYmd(new Date()),
-        amount_ml: option.amount,
-        drink_type: option.type,
-        goal_ml: summary?.current_goal || 2500,
-      });
-      toast.success(`${option.label} (+${option.amount} ml) ✓`);
-      await loadAll();
-    } catch (err) {
-      toast.error(err.response?.data?.error || err.message);
-    }
-  };
-
   const handleDelete = async (entry) => {
-    if (!window.confirm("Da li ste sigurni da želite da obrišete ovaj unos?"))
-      return;
+    if (!window.confirm("Da li ste sigurni da želite da obrišete ovaj unos?")) return;
     try {
       await removeEntry(entry.id);
       toast.success("Unos je obrisan.");
@@ -136,7 +119,7 @@ function HydrationPage() {
   };
 
   const handleExportPdf = () => {
-    exportHydrationPdf({
+    exportSleepPdf({
       summary,
       periodStats,
       records,
@@ -147,68 +130,46 @@ function HydrationPage() {
   };
 
   return (
-    <div className="page hydration-page">
+    <div className="page sleep-page">
       <div className="page-header">
         <div>
-          <h1 className="page-title">💧 Hidratacija</h1>
+          <h1 className="page-title">🌙 Sleep - Praćenje sna</h1>
           <p className="page-subtitle">
-            Praćenje dnevnog unosa tečnosti, ciljeva i streak-a
+            Praćenje spavanja, faza sna, HR/HRV biometrije i ličnih rekorda
           </p>
         </div>
         <div className="metrics-header-actions">
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={handleExportPdf}
-          >
+          <button type="button" className="btn btn-secondary" onClick={handleExportPdf}>
             Export (PDF)
           </button>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={handleOpenAdd}
-          >
-            + Ručni unos
+          <button type="button" className="btn btn-primary" onClick={handleOpenAdd}>
+            + Dodaj san
           </button>
         </div>
       </div>
 
-      <HydrationSummaryCards summary={summary} />
+      <SleepSummaryCards summary={summary} />
 
-      <HydrationQuickAdd
-        onQuickAdd={handleQuickAdd}
-        onManualAdd={handleOpenAdd}
-        disabled={saving}
-      />
-
-      <HydrationStreakCard streak={streak} />
+      <SleepStreakCard streak={streak} />
 
       <Card className="nutrition-period-card">
-        <HydrationPeriodControls
+        <SleepPeriodControls
           granularity={granularity}
           periodLabel={periodLabel}
           onGranularityChange={setGranularity}
-          onPrevious={() =>
-            setAnchor(shiftHydrationAnchor(anchor, granularity, -1))
-          }
-          onNext={() => setAnchor(shiftHydrationAnchor(anchor, granularity, 1))}
+          onPrevious={() => setAnchor(shiftSleepAnchor(anchor, granularity, -1))}
+          onNext={() => setAnchor(shiftSleepAnchor(anchor, granularity, 1))}
         />
       </Card>
 
-      <HydrationChart 
-        periodStats={periodStats}
-        summary={summary}
-        granularity={granularity}
-      />
+      <SleepChart periodStats={periodStats} summary={summary} />
 
-      <HydrationRecords records={records} />
+      <SleepRecords records={records} />
 
-      <Card className="nutrition-period-card">
+      <Card>
         <h3>Istorija unosa</h3>
-        <HydrationTable
+        <SleepTable
           rows={entries}
-          periodStats={periodStats}
-          granularity={granularity}
           onEdit={handleOpenEdit}
           onDelete={handleDelete}
         />
@@ -221,18 +182,18 @@ function HydrationPage() {
       <Modal
         isOpen={modalOpen}
         onClose={handleCloseModal}
-        title={editingEntry ? "Izmeni unos" : "Novi unos tečnosti"}
+        title={editingEntry ? "Izmeni unos sna" : "Dodaj san"}
       >
-        <HydrationEntryForm
+        <SleepEntryForm
           initialData={editingEntry}
           isSubmitting={saving}
           onSubmit={handleSave}
           onCancel={handleCloseModal}
-          currentGoal={summary?.current_goal || 2500}
+          currentTarget={summary?.current_target || 480}
         />
       </Modal>
     </div>
   );
 }
 
-export default HydrationPage;
+export default SleepPage;

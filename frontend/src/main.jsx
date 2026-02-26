@@ -12,6 +12,7 @@ import { MetricsProvider } from "./context/MetricsContext";
 import { ActivityProvider } from "./context/ActivityContext";
 import { StepsProvider } from "./context/StepsContext";
 import { HydrationProvider } from "./context/HydrationContext";
+import { SleepProvider } from "./context/SleepContext";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./styles/index.css";
@@ -27,6 +28,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
                 <MetricsProvider>
                   <StepsProvider>
                     <HydrationProvider>
+                      <SleepProvider>
                       <ActivityProvider>
                         <NotificationProvider>
                           <App />
@@ -41,6 +43,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
                           />
                         </NotificationProvider>
                       </ActivityProvider>
+                      </SleepProvider>
                     </HydrationProvider>
                   </StepsProvider>
                 </MetricsProvider>

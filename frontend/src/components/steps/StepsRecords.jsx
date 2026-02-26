@@ -1,6 +1,6 @@
 import React from "react";
 import Card from "../common/Card";
-import { formatNumber, formatMeters } from "./stepsUtils";
+import { formatNumber, formatMeters, toYmd } from "./stepsUtils";
 import { FiAward } from "react-icons/fi";
 
 function StepsRecords({ records }) {
@@ -8,7 +8,8 @@ function StepsRecords({ records }) {
 
   const formatRecordDate = (d) => {
     if (!d) return "-";
-    return new Date(d).toLocaleDateString("sr-RS", { day: "numeric", month: "short", year: "numeric" });
+    const normalizedDate = toYmd(d);
+    return new Date(`${normalizedDate}T00:00:00`).toLocaleDateString("sr-RS", { day: "numeric", month: "short", year: "numeric" });
   };
 
   const items = [

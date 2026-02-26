@@ -24,6 +24,7 @@ import {
   FiMessageSquare,
   FiClipboard,
   FiDroplet,
+  FiPackage,
 } from "react-icons/fi";
 import NotificationBell from "../notifications/NotificationBell";
 import ContactModal from "../common/ContactModal";
@@ -58,8 +59,9 @@ function Navbar() {
   ];
 
   const metricsLinks = [
-    { to: "/metrics", label: "Kilaža", icon: <FiTrendingUp /> },
+    { to: "/metrics/weight", label: "Kilaža", icon: <FiPackage /> },
     { to: "/metrics/steps", label: "Koraci", icon: <FiActivity /> },
+    { to: "/metrics/sleep", label: "San", icon: <FiMoon /> },
   ];
 
   const nutritionLinks = [

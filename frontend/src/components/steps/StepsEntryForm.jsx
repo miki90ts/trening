@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from "react";
+import { toYmd } from "./stepsUtils";
 
 function StepsEntryForm({ initialData, isSubmitting, onSubmit, onCancel, currentGoal }) {
-  const [stepDate, setStepDate] = useState(new Date().toISOString().slice(0, 10));
+  const [stepDate, setStepDate] = useState(toYmd(new Date()));
   const [stepCount, setStepCount] = useState("");
   const [goal, setGoal] = useState(currentGoal || 10000);
   const [notes, setNotes] = useState("");
 
   useEffect(() => {
     if (initialData) {
-      setStepDate(initialData.step_date ? initialData.step_date.slice(0, 10) : new Date().toISOString().slice(0, 10));
+      setStepDate(initialData.step_date ? toYmd(initialData.step_date) : toYmd(new Date()));
       setStepCount(initialData.step_count ?? "");
       setGoal(initialData.goal ?? currentGoal ?? 10000);
       setNotes(initialData.notes || "");
     } else {
-      setStepDate(new Date().toISOString().slice(0, 10));
+      setStepDate(toYmd(new Date()));
       setStepCount("");
       setGoal(currentGoal || 10000);
       setNotes("");

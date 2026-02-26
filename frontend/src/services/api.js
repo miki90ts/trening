@@ -341,6 +341,26 @@ export const getHydrationStreak = () =>
 export const getHydrationGoal = () =>
   api.get("/hydration/goal").then((r) => r.data);
 
+// ======== SLEEP ========
+export const getSleepEntries = (params = {}) =>
+  api.get("/sleep/entries", { params }).then((r) => r.data);
+export const createSleepEntry = (data) =>
+  api.post("/sleep/entries", data).then((r) => r.data);
+export const updateSleepEntry = (id, data) =>
+  api.put(`/sleep/entries/${id}`, data).then((r) => r.data);
+export const deleteSleepEntry = (id) =>
+  api.delete(`/sleep/entries/${id}`).then((r) => r.data);
+export const getSleepPeriodStats = (params = {}) =>
+  api.get("/sleep/period-stats", { params }).then((r) => r.data);
+export const getSleepSummary = (params = {}) =>
+  api.get("/sleep/summary", { params }).then((r) => r.data);
+export const getSleepRecords = () =>
+  api.get("/sleep/records").then((r) => r.data);
+export const getSleepStreak = () =>
+  api.get("/sleep/streak").then((r) => r.data);
+export const getSleepGoal = () =>
+  api.get("/sleep/goal").then((r) => r.data);
+
 // ======== ACTIVITY TYPES ========
 export const getActivityTypes = (params = {}) =>
   api.get("/activity-types", { params }).then((r) => r.data);

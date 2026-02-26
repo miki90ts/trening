@@ -3747,6 +3747,7 @@ a {
 /* Chart Card */
 .chart-card {
   padding: 24px;
+  margin: 10px 0;
 }
 
 .chart-card h3 {
@@ -4072,6 +4073,7 @@ a {
 }
 
 .nutrition-period-card {
+  margin: 10px 0;
   padding: 14px;
 }
 
@@ -4410,6 +4412,7 @@ a {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  width: 85%;
 }
 
 .nav-link-child {
@@ -6298,4 +6301,81 @@ a {
 .table-actions {
   display: flex;
   gap: 0.4rem;
+}
+
+/* ===== SLEEP TRACKING ===== */
+.sleep-charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.2rem;
+  margin-bottom: 1.2rem;
+}
+
+.sleep-phase-bar-mini {
+  display: flex;
+  height: 12px;
+  border-radius: 6px;
+  overflow: hidden;
+  min-width: 80px;
+  background: var(--bg-hover);
+}
+.sleep-phase-deep { background: #3b82f6; }
+.sleep-phase-light { background: #60a5fa; }
+.sleep-phase-rem { background: #a78bfa; }
+.sleep-phase-awake { background: #f59e0b; }
+
+.sleep-entry-form .sleep-form-row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.sleep-entry-form .sleep-form-row .form-group {
+  flex: 1 1 140px;
+  min-width: 120px;
+}
+.sleep-form-phases .form-group {
+  flex: 1 1 100px;
+  min-width: 90px;
+}
+.sleep-form-details {
+  margin: 0.5rem 0;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+}
+.sleep-form-details summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+.sleep-form-details[open] summary {
+  margin-bottom: 0.6rem;
+}
+.sleep-duration-preview {
+  display: inline-block;
+  margin-top: 0.4rem;
+  color: var(--accent-success);
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+.form-hint {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
+}
+
+@media (max-width: 900px) {
+  .sleep-charts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 640px) {
+  .sleep-entry-form .sleep-form-row {
+    flex-direction: column;
+  }
+  .sleep-page .page-header {
+    flex-direction: column;
+  }
 }
