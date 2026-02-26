@@ -102,6 +102,13 @@ function ActivityPage() {
           </button>
           <button
             type="button"
+            className="btn btn-outline"
+            onClick={() => navigate("/activity/import")}
+          >
+            ⌚ Import fit
+          </button>
+          <button
+            type="button"
             className="btn btn-secondary"
             onClick={() => exportActivityCsv(activities)}
           >

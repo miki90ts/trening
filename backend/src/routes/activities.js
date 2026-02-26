@@ -1,7 +1,14 @@
 const express = require("express");
 const router = express.Router();
+const multer = require("multer");
 const pool = require("../db/connection");
 const { authenticate } = require("../middleware/auth");
+const { parseFile } = require("../utils/activityFitParser");
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB
+});
 
 const SORT_MAP = {
   newest: "a.performed_at DESC, a.id DESC",
@@ -994,5 +1001,171 @@ router.delete("/:id", authenticate, async (req, res, next) => {
     next(err);
   }
 });
+
+/* ================================================================
+  IMPORT –  POST /api/activities/import-activity
+   Accepts multipart form with one or more files (.fit)
+   Optionally provide activity_type_id to override auto-detection
+   ================================================================ */
+router.post(
+  "/import-activity",
+  authenticate,
+  upload.array("files", 20),
+  async (req, res, next) => {
+    const conn = await pool.getConnection();
+    try {
+      if (!req.files || req.files.length === 0) {
+        return res.status(400).json({
+          error: "Morate uploadovati bar jedan fajl (.fit)",
+        });
+      }
+
+      const overrideTypeId = req.body.activity_type_id
+        ? toInt(req.body.activity_type_id)
+        : null;
+
+      // Pre-load activity type codes for matching
+      const [typesRows] = await conn.query(
+        "SELECT id, code FROM activity_types WHERE is_active = 1",
+      );
+      const typeCodeMap = {};
+      for (const t of typesRows) {
+        typeCodeMap[t.code] = t.id;
+      }
+      const defaultTypeId = typeCodeMap["running"] || typesRows[0]?.id;
+
+      await conn.beginTransaction();
+
+      const imported = [];
+      const errors = [];
+
+      for (const file of req.files) {
+        try {
+          const ext = (file.originalname || "").split(".").pop().toLowerCase();
+          let fileType;
+          if (ext === "fit") {
+            fileType = "fit";
+          } else {
+            errors.push({
+              file: file.originalname,
+              error: "Nepodržan format. Koristite .fit",
+            });
+            continue;
+          }
+
+          const parsed = await parseFile(file.buffer, fileType);
+
+          if (!parsed.distance_meters || parsed.distance_meters <= 0) {
+            errors.push({
+              file: file.originalname,
+              error: "Nema podataka o distanci u fajlu",
+            });
+            continue;
+          }
+          if (!parsed.duration_seconds || parsed.duration_seconds <= 0) {
+            errors.push({
+              file: file.originalname,
+              error: "Nema podataka o trajanju u fajlu",
+            });
+            continue;
+          }
+
+          // Resolve activity_type_id
+          let activityTypeId = overrideTypeId;
+          if (!activityTypeId && parsed.sport_code) {
+            activityTypeId = typeCodeMap[parsed.sport_code] || defaultTypeId;
+          }
+          if (!activityTypeId) {
+            activityTypeId = defaultTypeId;
+          }
+
+          const performedAt = parsed.performed_at || toSqlDateTime(new Date());
+
+          const [insertResult] = await conn.query(
+            `INSERT INTO activities (
+              user_id, activity_type_id, name, description, performed_at,
+              distance_meters, duration_seconds, avg_pace_seconds_per_km,
+              avg_heart_rate, min_heart_rate, max_heart_rate,
+              ascent_meters, descent_meters, min_elevation_meters, max_elevation_meters,
+              calories, running_cadence_avg, running_cadence_min, running_cadence_max,
+              avg_speed_kmh, max_speed_kmh, moving_time_seconds
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              req.user.id,
+              activityTypeId,
+              parsed.name || "Import",
+              parsed.description || null,
+              performedAt,
+              parsed.distance_meters,
+              parsed.duration_seconds,
+              parsed.avg_pace_seconds_per_km,
+              parsed.avg_heart_rate || null,
+              parsed.min_heart_rate || null,
+              parsed.max_heart_rate || null,
+              parsed.ascent_meters || null,
+              parsed.descent_meters || null,
+              parsed.min_elevation_meters || null,
+              parsed.max_elevation_meters || null,
+              parsed.calories || null,
+              parsed.running_cadence_avg || null,
+              parsed.running_cadence_min || null,
+              parsed.running_cadence_max || null,
+              parsed.avg_speed_kmh || null,
+              parsed.max_speed_kmh || null,
+              parsed.moving_time_seconds || null,
+            ],
+          );
+
+          const activityId = insertResult.insertId;
+
+          // Insert splits
+          if (parsed.splits && parsed.splits.length > 0) {
+            for (const split of parsed.splits) {
+              await conn.query(
+                `INSERT INTO activity_splits
+                 (activity_id, split_order, label, distance_meters, duration_seconds, avg_pace_seconds_per_km)
+                 VALUES (?, ?, ?, ?, ?, ?)`,
+                [
+                  activityId,
+                  split.split_order,
+                  split.label || null,
+                  split.distance_meters,
+                  split.duration_seconds,
+                  split.avg_pace_seconds_per_km,
+                ],
+              );
+            }
+          }
+
+          imported.push({
+            id: activityId,
+            file: file.originalname,
+            name: parsed.name,
+            distance_meters: parsed.distance_meters,
+            duration_seconds: parsed.duration_seconds,
+            splits_count: (parsed.splits || []).length,
+          });
+        } catch (fileErr) {
+          errors.push({ file: file.originalname, error: fileErr.message });
+        }
+      }
+
+      await conn.commit();
+
+      res.status(201).json({
+        success: true,
+        imported_count: imported.length,
+        error_count: errors.length,
+        imported,
+        errors,
+      });
+    } catch (err) {
+      await conn.rollback();
+      next(err);
+    } finally {
+      conn.release();
+    }
+  },
+);
 
 module.exports = router;

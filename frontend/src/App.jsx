@@ -32,6 +32,7 @@ import SessionDetailPage from "./pages/SessionDetailPage";
 import StepsPage from "./pages/StepsPage";
 import HydrationPage from "./pages/HydrationPage";
 import SleepPage from "./pages/SleepPage";
+import ImportActivityPage from "./pages/ImportActivityPage";
 
 function App() {
   const { isAuthenticated } = useAuth();
@@ -189,6 +190,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <ActivityStatsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/activity/import"
+            element={
+              <ProtectedRoute>
+                <ImportActivityPage />
               </ProtectedRoute>
             }
           />

@@ -358,8 +358,7 @@ export const getSleepRecords = () =>
   api.get("/sleep/records").then((r) => r.data);
 export const getSleepStreak = () =>
   api.get("/sleep/streak").then((r) => r.data);
-export const getSleepGoal = () =>
-  api.get("/sleep/goal").then((r) => r.data);
+export const getSleepGoal = () => api.get("/sleep/goal").then((r) => r.data);
 
 // ======== ACTIVITY TYPES ========
 export const getActivityTypes = (params = {}) =>
@@ -384,6 +383,12 @@ export const updateActivity = (id, data) =>
   api.put(`/activities/${id}`, data).then((r) => r.data);
 export const deleteActivity = (id) =>
   api.delete(`/activities/${id}`).then((r) => r.data);
+export const imporActivityFiles = (formData) =>
+  api
+    .post("/activities/import-activity", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    })
+    .then((r) => r.data);
 
 // ======== ACTIVITY ANALYTICS ========
 export const getActivityPeriodStats = (params = {}) =>

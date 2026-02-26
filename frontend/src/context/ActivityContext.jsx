@@ -119,6 +119,11 @@ export function ActivityProvider({ children }) {
     return removed;
   };
 
+  const imporActivityFiles = async (formData) => {
+    const result = await api.imporActivityFiles(formData);
+    return result;
+  };
+
   const addActivityType = async (payload) => {
     const created = await api.createActivityType(payload);
     return created;
@@ -155,6 +160,7 @@ export function ActivityProvider({ children }) {
       addActivity,
       editActivity,
       removeActivity,
+      imporActivityFiles,
       addActivityType,
       editActivityType,
       removeActivityType,
