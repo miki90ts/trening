@@ -13,24 +13,22 @@ function StepsSummaryCards({ summary }) {
   return (
     <div className="steps-summary-grid">
       <Card className={`steps-summary-card steps-today-card ${goalMet ? "steps-goal-met" : ""}`}>
-        <div className="steps-today-head">
-          <div className="steps-today-ring">
-            <svg viewBox="0 0 100 100" className="steps-ring-svg">
-              <circle cx="50" cy="50" r="42" className="steps-ring-bg" />
-              <circle
-                cx="50" cy="50" r="42"
-                className="steps-ring-fill"
-                strokeDasharray={`${todayPct * 2.64} 264`}
-                strokeDashoffset="0"
-              />
-            </svg>
-            <span className="steps-ring-text">👟</span>
-          </div>
-          <div>
-            <h4>Danas</h4>
-            <p className="steps-today-count">{formatNumber(todaySteps)}</p>
-            <small>Cilj: {formatNumber(todayGoal)} ({todayPct}%)</small>
-          </div>
+        <div className="steps-today-ring">
+          <svg viewBox="0 0 100 100" className="steps-ring-svg">
+            <circle cx="50" cy="50" r="42" className="steps-ring-bg" />
+            <circle
+              cx="50" cy="50" r="42"
+              className="steps-ring-fill"
+              strokeDasharray={`${todayPct * 2.64} 264`}
+              strokeDashoffset="0"
+            />
+          </svg>
+          <span className="steps-ring-text">👟</span>
+        </div>
+        <div>
+          <h4>Danas</h4>
+          <p className="steps-today-count">{formatNumber(todaySteps)}</p>
+          <small>Cilj: {formatNumber(todayGoal)} ({todayPct}%)</small>
         </div>
       </Card>
 

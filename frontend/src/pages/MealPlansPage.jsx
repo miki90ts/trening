@@ -1,0 +1,296 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import * as api from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import Loading from '../components/common/Loading';
+import MealPlanDetailModal from '../components/mealPlans/MealPlanDetailModal';
+import {
+  FiPlus, FiEye, FiEdit2, FiTrash2, FiCalendar, FiPlay, FiClock,
+  FiCheckCircle, FiXCircle, FiClipboard, FiList, FiCopy, FiUser
+} from 'react-icons/fi';
+
+const MEAL_TYPE_LABELS = {
+  breakfast: 'Doručak',
+  lunch: 'Ručak',
+  dinner: 'Večera',
+  snack: 'Užina'
+};
+
+function MealPlansPage() {
+  const navigate = useNavigate();
+  const { isAdmin } = useAuth();
+  const [plans, setPlans] = useState([]);
+  const [sessions, setSessions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [detailPlanId, setDetailPlanId] = useState(null);
+  const [scheduleId, setScheduleId] = useState(null);
+  const [scheduleDate, setScheduleDate] = useState(
+    new Date().toISOString().slice(0, 10)
+  );
+  const [scheduleUserId, setScheduleUserId] = useState('');
+  const [users, setUsers] = useState([]);
+  const [tab, setTab] = useState('plans');
+
+  const loadData = useCallback(async () => {
+    try {
+      const promises = [api.getMealPlans(), api.getMealSessions()];
+      if (isAdmin) promises.push(api.getUsers());
+      const results = await Promise.all(promises);
+      setPlans(results[0]);
+      setSessions(results[1]);
+      if (isAdmin && results[2]) setUsers(results[2]);
+    } catch (err) {
+      toast.error('Greška pri učitavanju');
+    } finally {
+      setLoading(false);
+    }
+  }, [isAdmin]);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  const handleDeletePlan = async (id) => {
+    if (!window.confirm('Obriši ovaj plan ishrane?')) return;
+    try {
+      await api.deleteMealPlan(id);
+      toast.success('Plan ishrane obrisan');
+      loadData();
+    } catch (err) {
+      toast.error('Greška: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
+  const handleSchedule = async () => {
+    if (!scheduleId || !scheduleDate) return;
+    if (isAdmin && !scheduleUserId) {
+      toast.warn('Izaberi korisnika za koga zakazuješ plan ishrane.');
+      return;
+    }
+    try {
+      const data = { scheduled_date: scheduleDate };
+      if (isAdmin && scheduleUserId) {
+        data.user_id = parseInt(scheduleUserId, 10);
+      }
+      const result = await api.scheduleMealPlan(scheduleId, data);
+      toast.success(result.message || 'Plan ishrane zakazan! 🍽️');
+      setScheduleId(null);
+      setScheduleUserId('');
+      loadData();
+    } catch (err) {
+      toast.error('Greška: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
+  const handleStartSession = async (sessionId) => {
+    try {
+      await api.startMealSession(sessionId);
+      navigate(`/meal-plans/session/${sessionId}`);
+    } catch (err) {
+      toast.error('Greška: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
+  const handleDeleteSession = async (id) => {
+    if (!window.confirm('Otkaži ovu sesiju ishrane?')) return;
+    try {
+      await api.deleteMealSession(id);
+      toast.success('Sesija otkazana');
+      loadData();
+    } catch (err) {
+      toast.error('Greška: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
+  const getStatusBadge = (status) => {
+    const map = {
+      scheduled: { label: 'Zakazano', icon: <FiCalendar />, cls: 'badge-scheduled' },
+      in_progress: { label: 'U toku', icon: <FiPlay />, cls: 'badge-in-progress' },
+      completed: { label: 'Završeno', icon: <FiCheckCircle />, cls: 'badge-completed' },
+      skipped: { label: 'Preskočeno', icon: <FiXCircle />, cls: 'badge-skipped' },
+    };
+    const s = map[status] || map.scheduled;
+    return <span className={`session-status-badge ${s.cls}`}>{s.icon} {s.label}</span>;
+  };
+
+  const formatDate = (d) => {
+    if (!d) return '-';
+    return new Date(d).toLocaleDateString('sr-Latn-RS', {
+      day: 'numeric', month: 'short', year: 'numeric'
+    });
+  };
+
+  if (loading) return <Loading />;
+
+  return (
+    <div className="page plans-page meal-plans-page">
+      <div className="page-header">
+        <h1 className="page-title">🍽️ Planovi ishrane</h1>
+        <button className="btn btn-primary" onClick={() => navigate('/meal-plans/new')}>
+          <FiPlus /> Novi plan
+        </button>
+      </div>
+
+      {/* Tabs */}
+      <div className="plans-tabs">
+        <button
+          className={`plans-tab ${tab === 'plans' ? 'active' : ''}`}
+          onClick={() => setTab('plans')}
+        >
+          <FiClipboard /> Moji planovi ({plans.length})
+        </button>
+        <button
+          className={`plans-tab ${tab === 'sessions' ? 'active' : ''}`}
+          onClick={() => setTab('sessions')}
+        >
+          <FiList /> Sesije ({sessions.length})
+        </button>
+      </div>
+
+      {/* PLANS TAB */}
+      {tab === 'plans' && (
+        <div className="plans-grid">
+          {plans.length === 0 ? (
+            <div className="empty-state">
+              <FiClipboard size={48} />
+              <h3>Nema planova ishrane</h3>
+              <p>Kreiraj prvi plan ishrane!</p>
+              <button className="btn btn-primary" onClick={() => navigate('/meal-plans/new')}>
+                <FiPlus /> Kreiraj plan
+              </button>
+            </div>
+          ) : (
+            plans.map(plan => (
+              <div key={plan.id} className="plan-card" style={{ borderTopColor: plan.color || '#10b981' }}>
+                <div className="plan-card-header">
+                  <div className="plan-card-color" style={{ background: plan.color || '#10b981' }} />
+                  <div className="plan-card-title">
+                    <h3>{plan.name}</h3>
+                    {plan.description && <p>{plan.description}</p>}
+                  </div>
+                </div>
+                <div className="plan-card-meta">
+                  <span>{plan.meal_count} obroka</span>
+                </div>
+                <div className="plan-card-actions">
+                  <button className="btn btn-sm btn-ghost" onClick={() => setDetailPlanId(plan.id)} title="Detalji">
+                    <FiEye />
+                  </button>
+                  <button className="btn btn-sm btn-ghost" onClick={() => navigate(`/meal-plans/${plan.id}/edit`)} title="Izmeni">
+                    <FiEdit2 />
+                  </button>
+                  <button className="btn btn-sm btn-ghost" onClick={() => navigate(`/meal-plans/new?copyFrom=${plan.id}`)} title="Kopiraj">
+                    <FiCopy />
+                  </button>
+                  <button className="btn btn-sm btn-ghost" onClick={() => setScheduleId(plan.id)} title="Zakaži">
+                    <FiCalendar />
+                  </button>
+                  <button className="btn btn-sm btn-ghost btn-danger-ghost" onClick={() => handleDeletePlan(plan.id)} title="Obriši">
+                    <FiTrash2 />
+                  </button>
+                </div>
+
+                {/* Schedule popover */}
+                {scheduleId === plan.id && (
+                  <div className="plan-schedule-popover">
+                    {isAdmin && (
+                      <div className="form-group">
+                        <label className="form-label"><FiUser size={13} /> Korisnik</label>
+                        <select
+                          value={scheduleUserId}
+                          onChange={e => setScheduleUserId(e.target.value)}
+                          className="form-control"
+                        >
+                          <option value="">— Izaberi korisnika —</option>
+                          {users.map(u => (
+                            <option key={u.id} value={u.id}>
+                              {u.nickname || `${u.first_name} ${u.last_name || ''}`.trim()}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                    <div className="form-group">
+                      <label className="form-label"><FiCalendar size={13} /> Datum</label>
+                      <input
+                        type="date"
+                        value={scheduleDate}
+                        onChange={e => setScheduleDate(e.target.value)}
+                        className="form-control"
+                      />
+                    </div>
+                    <div className="plan-schedule-inline">
+                      <button className="btn btn-sm btn-primary" onClick={handleSchedule}>Zakaži</button>
+                      <button className="btn btn-sm btn-ghost" onClick={() => { setScheduleId(null); setScheduleUserId(''); }}>Otkaži</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* SESSIONS TAB */}
+      {tab === 'sessions' && (
+        <div className="sessions-list">
+          {sessions.length === 0 ? (
+            <div className="empty-state">
+              <FiCalendar size={48} />
+              <h3>Nema sesija ishrane</h3>
+              <p>Zakaži plan da bi kreirao sesiju.</p>
+            </div>
+          ) : (
+            sessions.map(s => (
+              <div key={s.id} className="session-card">
+                <div className="session-card-left">
+                  {getStatusBadge(s.status)}
+                  <div className="session-card-info">
+                    <strong>{s.plan_name}</strong>
+                    <span className="session-card-date">
+                      <FiCalendar size={12} /> {formatDate(s.scheduled_date)}
+                    </span>
+                    <span className="session-card-exercises">
+                      {s.meal_count} obroka
+                      {s.status === 'in_progress' && ` · ${s.completed_meals || 0}/${s.total_meals} završeno`}
+                    </span>
+                  </div>
+                </div>
+                <div className="session-card-actions">
+                  {s.status === 'scheduled' && (
+                    <button className="btn btn-sm btn-primary" onClick={() => handleStartSession(s.id)}>
+                      <FiPlay /> Započni
+                    </button>
+                  )}
+                  {s.status === 'in_progress' && (
+                    <button className="btn btn-sm btn-primary" onClick={() => navigate(`/meal-plans/session/${s.id}`)}>
+                      <FiPlay /> Nastavi
+                    </button>
+                  )}
+                  {s.status === 'completed' && (
+                    <button className="btn btn-sm btn-ghost" onClick={() => navigate(`/meal-plans/session/${s.id}/detail`)}>
+                      <FiEye /> Detalji
+                    </button>
+                  )}
+                  {s.status !== 'completed' && (
+                    <button className="btn btn-sm btn-ghost btn-danger-ghost" onClick={() => handleDeleteSession(s.id)}>
+                      <FiTrash2 />
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Detail modal */}
+      <MealPlanDetailModal
+        isOpen={!!detailPlanId}
+        onClose={() => setDetailPlanId(null)}
+        planId={detailPlanId}
+      />
+    </div>
+  );
+}
+
+export default MealPlansPage;

@@ -33,6 +33,10 @@ import StepsPage from "./pages/StepsPage";
 import HydrationPage from "./pages/HydrationPage";
 import SleepPage from "./pages/SleepPage";
 import ImportActivityPage from "./pages/ImportActivityPage";
+import MealPlansPage from "./pages/MealPlansPage";
+import MealPlanBuilderPage from "./pages/MealPlanBuilderPage";
+import MealSessionExecutionPage from "./pages/MealSessionExecutionPage";
+import MealSessionDetailPage from "./pages/MealSessionDetailPage";
 
 function App() {
   const { isAuthenticated } = useAuth();
@@ -264,6 +268,48 @@ function App() {
             element={
               <ProtectedRoute>
                 <SessionDetailPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Meal plan rute */}
+          <Route
+            path="/meal-plans"
+            element={
+              <ProtectedRoute>
+                <MealPlansPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/meal-plans/new"
+            element={
+              <ProtectedRoute>
+                <MealPlanBuilderPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/meal-plans/:id/edit"
+            element={
+              <ProtectedRoute>
+                <MealPlanBuilderPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/meal-plans/session/:sessionId"
+            element={
+              <ProtectedRoute>
+                <MealSessionExecutionPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/meal-plans/session/:sessionId/detail"
+            element={
+              <ProtectedRoute>
+                <MealSessionDetailPage />
               </ProtectedRoute>
             }
           />

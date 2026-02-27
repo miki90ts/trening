@@ -71,7 +71,8 @@ function CalendarGrid({
           const hasActivities = cell.activities && cell.activities.length > 0;
           const hasScheduled = cell.scheduled && cell.scheduled.length > 0;
           const hasSessions = cell.sessions && cell.sessions.length > 0;
-          const hasEvents = hasWorkouts || hasActivities || hasScheduled || hasSessions;
+          const hasMealSessions = cell.mealSessions && cell.mealSessions.length > 0;
+          const hasEvents = hasWorkouts || hasActivities || hasScheduled || hasSessions || hasMealSessions;
 
           return (
             <div
@@ -123,6 +124,17 @@ function CalendarGrid({
                         color="var(--accent-primary)"
                         title={`📋 ${ps.plan_name} (${ps.status === 'completed' ? 'završeno' : ps.status === 'in_progress' ? 'u toku' : 'zakazano'})`}
                         type={ps.status === 'completed' ? 'workout' : 'scheduled'}
+                      />
+                    ))}
+                {hasMealSessions &&
+                  cell.mealSessions
+                    .slice(0, 2)
+                    .map((ms, i) => (
+                      <WorkoutDot
+                        key={`ms-${ms.id || i}`}
+                        color="var(--accent-warning)"
+                        title={`🍽️ ${ms.plan_name} (${ms.status === 'completed' ? 'završeno' : ms.status === 'in_progress' ? 'u toku' : 'zakazano'})`}
+                        type={ms.status === 'completed' ? 'workout' : 'scheduled'}
                       />
                     ))}
                 {(cell.workouts?.length > 3 ||

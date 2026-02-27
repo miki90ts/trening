@@ -56,6 +56,7 @@ function Navbar() {
     { to: "/analytics", label: "Analitika", icon: <FiTrendingUp /> },
     { to: "/activity", label: "Activity", icon: <FiActivity /> },
     { to: "/plans", label: "Planovi", icon: <FiClipboard /> },
+    { to: "/meal-plans", label: "Plan ishrane", icon: <FiBookOpen /> },
   ];
 
   const metricsLinks = [

@@ -251,10 +251,61 @@ function CalendarDayDetail({
         </div>
       )}
 
+      {/* Meal plan sesije */}
+      {dayData.mealSessions && dayData.mealSessions.length > 0 && (
+        <div className="calendar-day-section">
+          <h4 className="calendar-day-section-title">
+            🍽️ Plan ishrane ({dayData.mealSessions.length})
+          </h4>
+          <div className="calendar-day-items">
+            {dayData.mealSessions.map((ms) => (
+              <div
+                key={ms.id}
+                className="calendar-workout-item calendar-workout-item--clickable"
+                role="button"
+                tabIndex={0}
+                onClick={() => {
+                  if (ms.status === 'completed') navigate(`/meal-plans/session/${ms.id}/detail`);
+                  else if (ms.status === 'in_progress') navigate(`/meal-plans/session/${ms.id}`);
+                  else navigate('/meal-plans');
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    if (ms.status === 'completed') navigate(`/meal-plans/session/${ms.id}/detail`);
+                    else if (ms.status === 'in_progress') navigate(`/meal-plans/session/${ms.id}`);
+                    else navigate('/meal-plans');
+                  }
+                }}
+                title={ms.plan_name}
+              >
+                <div
+                  className="schedule-item-color"
+                  style={{ backgroundColor: "var(--accent-warning)" }}
+                />
+                <div className="calendar-workout-info">
+                  <span className="schedule-item-icon">🍽️</span>
+                  <div>
+                    <span className="schedule-item-exercise">{ms.plan_name}</span>
+                    <span className="schedule-item-category">{ms.meal_count} obroka</span>
+                  </div>
+                </div>
+                <div className="calendar-workout-score">
+                  {ms.status === 'completed' && <><FiCheckCircle style={{ color: 'var(--accent-success)' }} /> <span>Završeno</span></>}
+                  {ms.status === 'in_progress' && <><FiPlay style={{ color: 'var(--accent-warning)' }} /> <span>U toku</span></>}
+                  {ms.status === 'scheduled' && <><FiClock /> <span>Zakazano</span></>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {dayData.workouts.length === 0 &&
         dayData.activities.length === 0 &&
         dayData.scheduled.length === 0 &&
         (!dayData.sessions || dayData.sessions.length === 0) &&
+        (!dayData.mealSessions || dayData.mealSessions.length === 0) &&
         !showForm && (
           <p className="empty-state">Nema aktivnosti za ovaj dan.</p>
         )}

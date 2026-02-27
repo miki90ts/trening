@@ -91,13 +91,28 @@ router.get("/month", authenticate, async (req, res, next) => {
       [userId, month],
     );
 
-    // 5. Grupisanje po datumu
+    // 5. Meal plan sesije za mesec
+    const [mealSessions] = await pool.query(
+      `
+      SELECT ms.id, ms.plan_id, ms.plan_name, ms.scheduled_date, ms.status,
+             ms.started_at, ms.completed_at,
+             COUNT(DISTINCT msm.id) as meal_count
+      FROM meal_sessions ms
+      LEFT JOIN meal_session_meals msm ON msm.session_id = ms.id
+      WHERE ms.user_id = ? AND DATE_FORMAT(ms.scheduled_date, '%Y-%m') = ?
+      GROUP BY ms.id
+      ORDER BY ms.scheduled_date ASC
+    `,
+      [userId, month],
+    );
+
+    // 6. Grupisanje po datumu
     const byDate = {};
 
     for (const w of workouts) {
       const dateKey = new Date(w.attempt_date).toISOString().slice(0, 10);
       if (!byDate[dateKey]) {
-        byDate[dateKey] = { workouts: [], activities: [], scheduled: [], sessions: [] };
+        byDate[dateKey] = { workouts: [], activities: [], scheduled: [], sessions: [], mealSessions: [] };
       }
       byDate[dateKey].workouts.push(w);
     }
@@ -105,7 +120,7 @@ router.get("/month", authenticate, async (req, res, next) => {
     for (const a of activities) {
       const dateKey = a.performed_date;
       if (!byDate[dateKey]) {
-        byDate[dateKey] = { workouts: [], activities: [], scheduled: [], sessions: [] };
+        byDate[dateKey] = { workouts: [], activities: [], scheduled: [], sessions: [], mealSessions: [] };
       }
       byDate[dateKey].activities.push(a);
     }
@@ -119,7 +134,7 @@ router.get("/month", authenticate, async (req, res, next) => {
       ].join("-");
 
       if (!byDate[dateKey]) {
-        byDate[dateKey] = { workouts: [], activities: [], scheduled: [], sessions: [] };
+        byDate[dateKey] = { workouts: [], activities: [], scheduled: [], sessions: [], mealSessions: [] };
       }
       byDate[dateKey].scheduled.push(s);
     }
@@ -133,10 +148,25 @@ router.get("/month", authenticate, async (req, res, next) => {
       ].join("-");
 
       if (!byDate[dateKey]) {
-        byDate[dateKey] = { workouts: [], activities: [], scheduled: [], sessions: [] };
+        byDate[dateKey] = { workouts: [], activities: [], scheduled: [], sessions: [], mealSessions: [] };
       }
       byDate[dateKey].sessions = byDate[dateKey].sessions || [];
       byDate[dateKey].sessions.push(ps);
+    }
+
+    for (const ms of mealSessions) {
+      const d = ms.scheduled_date;
+      const dateKey = [
+        d.getFullYear(),
+        String(d.getMonth() + 1).padStart(2, "0"),
+        String(d.getDate()).padStart(2, "0"),
+      ].join("-");
+
+      if (!byDate[dateKey]) {
+        byDate[dateKey] = { workouts: [], activities: [], scheduled: [], sessions: [], mealSessions: [] };
+      }
+      byDate[dateKey].mealSessions = byDate[dateKey].mealSessions || [];
+      byDate[dateKey].mealSessions.push(ms);
     }
 
     res.json(byDate);

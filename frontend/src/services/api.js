@@ -428,4 +428,31 @@ export const completeSession = (sessionId) =>
 export const deleteSession = (sessionId) =>
   api.delete(`/plans/sessions/${sessionId}`).then((r) => r.data);
 
+// ======== MEAL PLANS ========
+export const getMealPlans = () => api.get("/meal-plans").then((r) => r.data);
+export const getMealPlan = (id) =>
+  api.get(`/meal-plans/${id}`).then((r) => r.data);
+export const createMealPlan = (data) =>
+  api.post("/meal-plans", data).then((r) => r.data);
+export const updateMealPlan = (id, data) =>
+  api.put(`/meal-plans/${id}`, data).then((r) => r.data);
+export const deleteMealPlan = (id) =>
+  api.delete(`/meal-plans/${id}`).then((r) => r.data);
+
+// ======== MEAL PLAN SESSIONS ========
+export const scheduleMealPlan = (planId, data) =>
+  api.post(`/meal-plans/${planId}/schedule`, data).then((r) => r.data);
+export const getMealSessions = (params = {}) =>
+  api.get("/meal-plans/sessions/list", { params }).then((r) => r.data);
+export const getMealSession = (sessionId) =>
+  api.get(`/meal-plans/sessions/${sessionId}`).then((r) => r.data);
+export const startMealSession = (sessionId) =>
+  api.put(`/meal-plans/sessions/${sessionId}/start`).then((r) => r.data);
+export const updateMealSession = (sessionId, data) =>
+  api.put(`/meal-plans/sessions/${sessionId}`, data).then((r) => r.data);
+export const completeMealSession = (sessionId) =>
+  api.post(`/meal-plans/sessions/${sessionId}/complete`).then((r) => r.data);
+export const deleteMealSession = (sessionId) =>
+  api.delete(`/meal-plans/sessions/${sessionId}`).then((r) => r.data);
+
 export default api;
