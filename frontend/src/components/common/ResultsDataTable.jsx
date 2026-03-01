@@ -1,38 +1,53 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import Loading from './Loading';
-import WorkoutDetailModal from './WorkoutDetailModal';
-import WorkoutEditModal from './WorkoutEditModal';
-import * as api from '../../services/api';
-import { toast } from 'react-toastify';
+import React, { useState, useEffect, useCallback } from "react";
+import { useAuth } from "../../context/AuthContext";
+import Loading from "./Loading";
+import WorkoutDetailModal from "./WorkoutDetailModal";
+import WorkoutEditModal from "./WorkoutEditModal";
+import * as api from "../../services/api";
+import { toast } from "react-toastify";
 import {
-  FiEye, FiEdit2, FiTrash2,
-  FiChevronLeft, FiChevronRight,
-  FiChevronsLeft, FiChevronsRight
-} from 'react-icons/fi';
+  FiEye,
+  FiEdit2,
+  FiTrash2,
+  FiChevronLeft,
+  FiChevronRight,
+  FiChevronsLeft,
+  FiChevronsRight,
+} from "react-icons/fi";
 
 function ResultsDataTable({ categories, onDataChanged, refreshKey }) {
   const { user: currentUser, isAdmin } = useAuth();
   const [data, setData] = useState([]);
-  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0, totalPages: 0 });
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 10,
+    total: 0,
+    totalPages: 0,
+  });
   const [loading, setLoading] = useState(false);
 
   // Modali
   const [detailId, setDetailId] = useState(null);
   const [editId, setEditId] = useState(null);
 
-  const fetchData = useCallback(async (page = 1) => {
-    setLoading(true);
-    try {
-      const result = await api.getResultsPaginated({ page, pageSize: pagination.pageSize });
-      setData(result.data);
-      setPagination(result.pagination);
-    } catch (err) {
-      toast.error('Greška pri učitavanju rezultata');
-    } finally {
-      setLoading(false);
-    }
-  }, [pagination.pageSize]);
+  const fetchData = useCallback(
+    async (page = 1) => {
+      setLoading(true);
+      try {
+        const result = await api.getResultsPaginated({
+          page,
+          pageSize: pagination.pageSize,
+        });
+        setData(result.data);
+        setPagination(result.pagination);
+      } catch (err) {
+        toast.error("Greška pri učitavanju rezultata");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [pagination.pageSize],
+  );
 
   useEffect(() => {
     fetchData(1);
@@ -44,14 +59,14 @@ function ResultsDataTable({ categories, onDataChanged, refreshKey }) {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Obrisati ovaj rezultat?')) return;
+    if (!window.confirm("Obrisati ovaj rezultat?")) return;
     try {
       await api.deleteResult(id);
-      toast.success('Rezultat obrisan.');
+      toast.success("Rezultat obrisan.");
       fetchData(pagination.page);
       if (onDataChanged) onDataChanged();
     } catch (err) {
-      toast.error('Greška: ' + (err.response?.data?.error || err.message));
+      toast.error("Greška: " + (err.response?.data?.error || err.message));
     }
   };
 
@@ -63,10 +78,10 @@ function ResultsDataTable({ categories, onDataChanged, refreshKey }) {
 
   const formatScore = (score, type, hasW) => {
     if (hasW) return `${score} vol`;
-    if (type === 'seconds') return `${score}s`;
-    if (type === 'minutes') return `${score}min`;
-    if (type === 'meters') return `${score}m`;
-    if (type === 'kg') return `${score}kg`;
+    if (type === "seconds") return `${score}s`;
+    if (type === "minutes") return `${score}min`;
+    if (type === "meters") return `${score}m`;
+    if (type === "kg") return `${score}kg`;
     return `${score}x`;
   };
 
@@ -113,46 +128,59 @@ function ResultsDataTable({ categories, onDataChanged, refreshKey }) {
               </thead>
               <tbody>
                 {data.map((r, idx) => {
-                  const rowNum = (pagination.page - 1) * pagination.pageSize + idx + 1;
+                  const rowNum =
+                    (pagination.page - 1) * pagination.pageSize + idx + 1;
                   const canEdit = r.user_id === currentUser?.id || isAdmin;
 
                   return (
                     <tr key={r.id}>
                       <td className="dt-row-num">{rowNum}</td>
-                      <td>{r.nickname || `${r.first_name} ${r.last_name || ''}`}</td>
-                      <td>{r.exercise_icon} {r.exercise_name}</td>
+                      <td>
+                        {r.nickname || `${r.first_name} ${r.last_name || ""}`}
+                      </td>
+                      <td>
+                        {r.exercise_icon} {r.exercise_name}
+                      </td>
                       <td>{r.category_name}</td>
                       <td>{r.total_sets}</td>
                       <td className="value-cell">
-                        {formatScore(parseFloat(r.score), r.value_type, r.has_weight)}
-                      </td>
-                      <td>{new Date(r.attempt_date).toLocaleDateString('sr-RS')}</td>
-                      <td className="dt-actions">
-                        <button
-                          className="btn-icon dt-btn dt-btn-view"
-                          onClick={() => setDetailId(r.id)}
-                          title="Pregledaj"
-                        >
-                          <FiEye />
-                        </button>
-                        {canEdit && (
-                          <>
-                            <button
-                              className="btn-icon dt-btn dt-btn-edit"
-                              onClick={() => setEditId(r.id)}
-                              title="Izmeni"
-                            >
-                              <FiEdit2 />
-                            </button>
-                            <button
-                              className="btn-icon dt-btn dt-btn-delete"
-                              onClick={() => handleDelete(r.id)}
-                              title="Obriši"
-                            >
-                              <FiTrash2 />
-                            </button>
-                          </>
+                        {formatScore(
+                          parseFloat(r.score),
+                          r.value_type,
+                          r.has_weight,
                         )}
+                      </td>
+                      <td>
+                        {new Date(r.attempt_date).toLocaleDateString("sr-RS")}
+                      </td>
+                      <td>
+                        <div className="dt-actions">
+                          <button
+                            className="btn-icon dt-btn dt-btn-view"
+                            onClick={() => setDetailId(r.id)}
+                            title="Pregledaj"
+                          >
+                            <FiEye />
+                          </button>
+                          {canEdit && (
+                            <>
+                              <button
+                                className="btn-icon dt-btn dt-btn-edit"
+                                onClick={() => setEditId(r.id)}
+                                title="Izmeni"
+                              >
+                                <FiEdit2 />
+                              </button>
+                              <button
+                                className="btn-icon dt-btn dt-btn-delete"
+                                onClick={() => handleDelete(r.id)}
+                                title="Obriši"
+                              >
+                                <FiTrash2 />
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -165,7 +193,12 @@ function ResultsDataTable({ categories, onDataChanged, refreshKey }) {
           {pagination.totalPages > 1 && (
             <div className="dt-pagination">
               <span className="dt-pagination-info">
-                Prikazano {(pagination.page - 1) * pagination.pageSize + 1}–{Math.min(pagination.page * pagination.pageSize, pagination.total)} od {pagination.total}
+                Prikazano {(pagination.page - 1) * pagination.pageSize + 1}–
+                {Math.min(
+                  pagination.page * pagination.pageSize,
+                  pagination.total,
+                )}{" "}
+                od {pagination.total}
               </span>
               <div className="dt-pagination-controls">
                 <button
@@ -185,10 +218,10 @@ function ResultsDataTable({ categories, onDataChanged, refreshKey }) {
                   <FiChevronLeft />
                 </button>
 
-                {getPageNumbers().map(p => (
+                {getPageNumbers().map((p) => (
                   <button
                     key={p}
-                    className={`dt-page-btn ${p === pagination.page ? 'active' : ''}`}
+                    className={`dt-page-btn ${p === pagination.page ? "active" : ""}`}
                     onClick={() => goToPage(p)}
                   >
                     {p}

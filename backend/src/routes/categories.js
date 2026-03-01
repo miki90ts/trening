@@ -1,166 +1,27 @@
 const express = require("express");
 const router = express.Router();
-const pool = require("../db/connection");
 const { authenticate, authorize } = require("../middleware/auth");
+const categoriesController = require("../controllers/categories");
 
-// GET /api/categories
-router.get("/", async (req, res, next) => {
-  try {
-    const { exercise_id } = req.query;
-    let query = `
-      SELECT c.*, e.name as exercise_name, e.icon as exercise_icon 
-      FROM categories c 
-      JOIN exercises e ON c.exercise_id = e.id
-    `;
-    const values = [];
-    if (exercise_id) {
-      query += " WHERE c.exercise_id = ?";
-      values.push(exercise_id);
-    }
-    query += " ORDER BY e.name, c.name";
-    const [rows] = await pool.query(query, values);
-    res.json(rows);
-  } catch (err) {
-    next(err);
-  }
-});
-
-// GET /api/categories/:id
-router.get("/:id", async (req, res, next) => {
-  try {
-    const [rows] = await pool.query(
-      `
-      SELECT c.*, e.name as exercise_name, e.icon as exercise_icon 
-      FROM categories c 
-      JOIN exercises e ON c.exercise_id = e.id 
-      WHERE c.id = ?
-    `,
-      [req.params.id],
-    );
-    if (rows.length === 0)
-      return res.status(404).json({ error: "Category not found" });
-    res.json(rows[0]);
-  } catch (err) {
-    next(err);
-  }
-});
-
-// POST /api/categories - Admin only
-router.post("/", authenticate, authorize("admin"), async (req, res, next) => {
-  try {
-    const { exercise_id, name, value_type, has_weight, description, color } =
-      req.body;
-    if (!exercise_id || !name)
-      return res
-        .status(400)
-        .json({ error: "exercise_id and name are required" });
-
-    if (color && !/^#[0-9A-Fa-f]{6}$/.test(color)) {
-      return res
-        .status(400)
-        .json({ error: "color must be a valid hex color (e.g. #6366f1)" });
-    }
-
-    const [result] = await pool.query(
-      "INSERT INTO categories (exercise_id, name, value_type, has_weight, description, color) VALUES (?, ?, ?, ?, ?, ?)",
-      [
-        exercise_id,
-        name,
-        value_type || "reps",
-        has_weight ? 1 : 0,
-        description || null,
-        color || "#6366f1",
-      ],
-    );
-    const [cat] = await pool.query("SELECT * FROM categories WHERE id = ?", [
-      result.insertId,
-    ]);
-    res.status(201).json(cat[0]);
-  } catch (err) {
-    next(err);
-  }
-});
-
-// PUT /api/categories/:id - Admin only
-router.put("/:id", authenticate, authorize("admin"), async (req, res, next) => {
-  try {
-    const { name, value_type, has_weight, description, color } = req.body;
-    const updates = [];
-    const values = [];
-
-    if (name) {
-      updates.push("name = ?");
-      values.push(name);
-    }
-    if (value_type) {
-      updates.push("value_type = ?");
-      values.push(value_type);
-    }
-    if (has_weight !== undefined) {
-      updates.push("has_weight = ?");
-      values.push(has_weight ? 1 : 0);
-    }
-    if (description !== undefined) {
-      updates.push("description = ?");
-      values.push(description);
-    }
-    if (color !== undefined) {
-      if (color && !/^#[0-9A-Fa-f]{6}$/.test(color)) {
-        return res
-          .status(400)
-          .json({ error: "color must be a valid hex color (e.g. #6366f1)" });
-      }
-      updates.push("color = ?");
-      values.push(color);
-    }
-
-    if (updates.length === 0)
-      return res.status(400).json({ error: "No fields to update" });
-
-    values.push(req.params.id);
-    await pool.query(
-      `UPDATE categories SET ${updates.join(", ")} WHERE id = ?`,
-      values,
-    );
-    const [cat] = await pool.query("SELECT * FROM categories WHERE id = ?", [
-      req.params.id,
-    ]);
-    res.json(cat[0]);
-  } catch (err) {
-    next(err);
-  }
-});
-
-// DELETE /api/categories/:id - Admin only
+router.get("/", categoriesController.getCategories);
+router.get("/:id", categoriesController.getCategoryById);
+router.post(
+  "/",
+  authenticate,
+  authorize("admin"),
+  categoriesController.createCategory,
+);
+router.put(
+  "/:id",
+  authenticate,
+  authorize("admin"),
+  categoriesController.updateCategory,
+);
 router.delete(
   "/:id",
   authenticate,
   authorize("admin"),
-  async (req, res, next) => {
-    try {
-      const [usageRows] = await pool.query(
-        "SELECT COUNT(*) AS total FROM workouts WHERE category_id = ?",
-        [req.params.id],
-      );
-      const linkedWorkouts = usageRows[0]?.total || 0;
-
-      if (linkedWorkouts > 0) {
-        return res.status(409).json({
-          error:
-            "Kategorija ne može da se obriše jer je vezana za postojeće workout unose.",
-        });
-      }
-
-      const [result] = await pool.query("DELETE FROM categories WHERE id = ?", [
-        req.params.id,
-      ]);
-      if (result.affectedRows === 0)
-        return res.status(404).json({ error: "Category not found" });
-      res.json({ message: "Category deleted" });
-    } catch (err) {
-      next(err);
-    }
-  },
+  categoriesController.deleteCategory,
 );
 
 module.exports = router;

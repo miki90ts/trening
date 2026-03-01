@@ -25,6 +25,8 @@ const mealPlansRouter = require("./routes/mealPlans");
 const stepsRouter = require("./routes/steps");
 const hydrationRouter = require("./routes/hydration");
 const sleepRouter = require("./routes/sleep");
+const notificationsRouter = require("./routes/notifications");
+const cronRouter = require("./routes/cron");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -60,6 +62,8 @@ app.use("/api/meal-plans", mealPlansRouter);
 app.use("/api/steps", stepsRouter);
 app.use("/api/hydration", hydrationRouter);
 app.use("/api/sleep", sleepRouter);
+app.use("/api/notifications", notificationsRouter);
+app.use("/api/cron", cronRouter);
 
 // Health check
 app.get("/api/health", (req, res) => {
@@ -73,6 +77,32 @@ app.use((err, req, res, next) => {
     error: err.message || "Internal Server Error",
   });
 });
+
+// Optional node-cron scheduler (fallback za cPanel cron)
+if (process.env.ENABLE_NODE_CRON === "true") {
+  try {
+    const cron = require("node-cron");
+    const { processReminders } = require("./services/cronReminders");
+    // Svaki dan u 7:30 ujutru (Europe/Belgrade)
+    cron.schedule(
+      "30 7 * * *",
+      async () => {
+        console.log("[node-cron] Pokrenuti dnevni podsetnici...");
+        try {
+          await processReminders();
+        } catch (err) {
+          console.error("[node-cron] Greška:", err.message);
+        }
+      },
+      { timezone: "Europe/Belgrade" },
+    );
+    console.log(
+      "📅 node-cron zakazan: dnevni podsetnici u 07:30 (Europe/Belgrade)",
+    );
+  } catch (err) {
+    console.warn("node-cron nije dostupan:", err.message);
+  }
+}
 
 app.listen(PORT, () => {
   console.log(`🏋️ Fitness Records API running on http://localhost:${PORT}`);

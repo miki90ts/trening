@@ -1,4 +1,5 @@
 const pool = require("../db/connection");
+const { httpError } = require("../helpers/httpError");
 
 const SCORE_SQL = `
   CASE 
@@ -6,12 +7,6 @@ const SCORE_SQL = `
     ELSE COALESCE(SUM(ws.reps), 0)
   END
 `;
-
-function httpError(status, message) {
-  const err = new Error(message);
-  err.status = status;
-  return err;
-}
 
 async function getPlans(userId) {
   const [plans] = await pool.query(

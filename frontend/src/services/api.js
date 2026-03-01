@@ -398,6 +398,22 @@ export const getActivityPeriodExportData = (params = {}) =>
 export const getActivitySummary = () =>
   api.get("/activity-analytics/summary").then((r) => r.data);
 
+// ======== NOTIFICATIONS ========
+export const getNotifications = (params = {}) =>
+  api.get("/notifications", { params }).then((r) => r.data);
+export const getUnreadNotificationCount = () =>
+  api.get("/notifications/unread-count").then((r) => r.data);
+export const markNotificationRead = (id) =>
+  api.put(`/notifications/${id}/read`).then((r) => r.data);
+export const markAllNotificationsRead = () =>
+  api.put("/notifications/read-all").then((r) => r.data);
+export const getNotificationPreferences = () =>
+  api.get("/notifications/preferences").then((r) => r.data);
+export const updateNotificationPreferences = (preferences) =>
+  api.put("/notifications/preferences", { preferences }).then((r) => r.data);
+export const getDailyTasks = () =>
+  api.get("/notifications/daily-tasks").then((r) => r.data);
+
 // ======== CONTACT / SUPPORT ========
 export const sendContactMessage = (data) =>
   api.post("/contact", data).then((r) => r.data);

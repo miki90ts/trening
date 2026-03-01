@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTheme } from "../../context/ThemeContext";
 import { useAuth } from "../../context/AuthContext";
+import logo from "../../assets/images/pcnlogo.webp";
 import {
   FiHome,
   FiUsers,
@@ -124,8 +125,7 @@ function Navbar() {
           </button>
 
           <Link to="/" className="navbar-logo" onClick={closeMobileSidebar}>
-            <span className="logo-icon">🏋️</span>
-            <span className="logo-text">FitRecords</span>
+            <img src={logo} alt="Logo" className="logo-image" />
           </Link>
         </div>
 

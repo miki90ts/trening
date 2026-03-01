@@ -2,9 +2,14 @@ import React, { useState } from "react";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
 import * as api from "../services/api";
+import ProfileTabsNav from "../components/profile/ProfileTabsNav";
+import ProfileInfoTab from "../components/profile/ProfileInfoTab";
+import ProfilePasswordTab from "../components/profile/ProfilePasswordTab";
+import ProfileNotificationsTab from "../components/profile/ProfileNotificationsTab";
 
 function ProfilePage() {
   const { user, updateUser } = useAuth();
+  const [activeTab, setActiveTab] = useState("profile");
   const [form, setForm] = useState({
     first_name: user?.first_name || "",
     last_name: user?.last_name || "",
@@ -14,8 +19,16 @@ function ProfilePage() {
         ? true
         : Boolean(user?.show_in_users_list),
   });
+
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+
   const [imageFile, setImageFile] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -39,90 +52,74 @@ function ProfilePage() {
     }
   };
 
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+
+    if (!passwordForm.currentPassword || !passwordForm.newPassword) {
+      toast.error("Unesi trenutnu i novu lozinku.");
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 8) {
+      toast.error("Nova lozinka mora imati najmanje 8 karaktera.");
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast.error("Potvrda lozinke se ne poklapa.");
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      const result = await api.changePassword({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      });
+
+      toast.success(result?.message || "Lozinka je uspešno promenjena.");
+      setPasswordForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    } catch (err) {
+      toast.error("Greška: " + (err.response?.data?.error || err.message));
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
   return (
     <div className="page">
       <div className="page-header">
         <h1 className="page-title">🙍 Moj profil</h1>
       </div>
 
-      <div className="card form-card">
-        <form onSubmit={handleSubmit} className="form">
-          <div className="form-group">
-            <label>Email</label>
-            <input type="email" value={user?.email || ""} disabled />
-          </div>
+      <div className="profile-layout">
+        <ProfileTabsNav activeTab={activeTab} onChange={setActiveTab} />
 
-          <div className="form-group">
-            <label>Ime *</label>
-            <input
-              type="text"
-              value={form.first_name}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, first_name: e.target.value }))
-              }
-              required
+        <div className="profile-content card form-card">
+          {activeTab === "profile" ? (
+            <ProfileInfoTab
+              user={user}
+              form={form}
+              setForm={setForm}
+              setImageFile={setImageFile}
+              saving={saving}
+              onSubmit={handleSubmit}
             />
-          </div>
-
-          <div className="form-group">
-            <label>Prezime</label>
-            <input
-              type="text"
-              value={form.last_name}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, last_name: e.target.value }))
-              }
+          ) : activeTab === "password" ? (
+            <ProfilePasswordTab
+              passwordForm={passwordForm}
+              setPasswordForm={setPasswordForm}
+              changingPassword={changingPassword}
+              onSubmit={handleChangePassword}
             />
-          </div>
-
-          <div className="form-group">
-            <label>Nadimak</label>
-            <input
-              type="text"
-              value={form.nickname}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, nickname: e.target.value }))
-              }
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={form.show_in_users_list}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    show_in_users_list: e.target.checked,
-                  }))
-                }
-              />
-              <span>Prikaži me na listi učesnika</span>
-            </label>
-            <small className="form-hint">
-              Ako isključiš, ostali korisnici te neće videti na stranici
-              Učesnici.
-            </small>
-          </div>
-
-          <div className="form-group">
-            <label>Profilna slika</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setImageFile(e.target.files[0])}
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="btn btn-primary btn-full"
-            disabled={saving}
-          >
-            {saving ? "Čuvanje..." : "Sačuvaj profil"}
-          </button>
-        </form>
+          ) : (
+            <ProfileNotificationsTab />
+          )}
+        </div>
       </div>
     </div>
   );

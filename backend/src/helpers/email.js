@@ -277,7 +277,131 @@ async function sendMealScheduleEmail(
   }
 }
 
+/**
+ * Šalje dnevni podsetnik email za zakazani plan treninga.
+ * Koristi se iz cron job-a.
+ */
+async function sendDailyReminderEmail(
+  targetUser,
+  planName,
+  planColor,
+  scheduledDate,
+  exercisesWithSets,
+  source,
+) {
+  try {
+    const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_SECURE } =
+      process.env;
+    if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
+      console.warn("SMTP nije konfigurisan — daily reminder email preskočen.");
+      return;
+    }
+
+    const transporter = nodemailer.createTransport({
+      host: SMTP_HOST,
+      port: parseInt(SMTP_PORT, 10),
+      secure: SMTP_SECURE === "true",
+      auth: { user: SMTP_USER, pass: SMTP_PASS },
+    });
+
+    const formattedDate = new Date(scheduledDate).toLocaleDateString(
+      "sr-Latn-RS",
+      {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      },
+    );
+
+    const color = planColor || "#6366f1";
+
+    let exerciseRows = "";
+    for (const ex of exercisesWithSets) {
+      const setsHtml = (ex.sets || [])
+        .map((s) => {
+          if (ex.has_weight && s.target_weight) {
+            return `${s.set_number}. set: ${s.target_reps} pon. × ${s.target_weight} kg`;
+          }
+          return `${s.set_number}. set: ${s.target_reps} pon.`;
+        })
+        .join("<br>");
+
+      exerciseRows += `
+        <tr>
+          <td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #1f2937; vertical-align: top;">
+            ${ex.exercise_icon ? ex.exercise_icon + " " : ""}${ex.category_name || ex.exercise_name || "Vežba"}
+          </td>
+          <td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; color: #4b5563; font-size: 13px; line-height: 1.6;">
+            ${setsHtml || "<em>Nema setova</em>"}
+          </td>
+        </tr>
+      `;
+    }
+
+    const htmlBody = `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+        <div style="background: ${color}; color: white; padding: 24px 28px;">
+          <h2 style="margin: 0 0 4px; font-size: 20px;">⏰ Podsetnik za trening danas!</h2>
+          <p style="margin: 0; opacity: 0.9; font-size: 14px;">FitRecords — Dnevni podsetnik</p>
+        </div>
+        <div style="background: #f9fafb; padding: 24px 28px;">
+          <div style="background: white; border-radius: 8px; padding: 16px 20px; margin-bottom: 16px; border: 1px solid #e5e7eb;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 6px 0; font-weight: 600; color: #6b7280; width: 110px;">Plan:</td>
+                <td style="padding: 6px 0; font-weight: 700; color: #1f2937;">${planName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; font-weight: 600; color: #6b7280;">Datum:</td>
+                <td style="padding: 6px 0; color: #1f2937;">📅 ${formattedDate}</td>
+              </tr>
+            </table>
+          </div>
+          ${
+            exercisesWithSets.length > 0
+              ? `
+          <h3 style="margin: 0 0 12px; color: #374151; font-size: 16px;">📋 Vežbe (${exercisesWithSets.length})</h3>
+          <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb;">
+            <thead>
+              <tr style="background: #f3f4f6;">
+                <th style="padding: 10px 12px; text-align: left; font-size: 13px; color: #6b7280; font-weight: 600;">Vežba</th>
+                <th style="padding: 10px 12px; text-align: left; font-size: 13px; color: #6b7280; font-weight: 600;">Setovi</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${exerciseRows}
+            </tbody>
+          </table>
+          `
+              : ""
+          }
+        </div>
+        <div style="background: #f3f4f6; padding: 14px 28px; border-top: 1px solid #e5e7eb;">
+          <p style="margin: 0; font-size: 12px; color: #9ca3af; text-align: center;">
+            Automatski podsetnik — FitRecords ${new Date().toLocaleString("sr-RS")}
+          </p>
+        </div>
+      </div>
+    `;
+
+    await transporter.sendMail({
+      from: `"FitRecords" <${SMTP_USER}>`,
+      to: targetUser.email,
+      subject: `⏰ Podsetnik: ${planName} — ${formattedDate}`,
+      html: htmlBody,
+    });
+
+    console.log(
+      `Daily reminder email poslat korisniku ${targetUser.email} za plan ${planName}`,
+    );
+  } catch (err) {
+    console.error("Greška pri slanju daily reminder email-a:", err.message);
+  }
+}
+
 module.exports = {
   sendWorkoutScheduleEmail,
   sendMealScheduleEmail,
+  sendDailyReminderEmail,
 };

@@ -168,6 +168,7 @@ Frontend će biti na `http://localhost:3000`
 - ✅ Timer sa odbrojavanjem i zvučnim signalom
 - ✅ Rang liste po vežbi, kategoriji, korisniku
 - ✅ Dashboard sa statistikama
+- ✅ Streak statistika računa dane sa workout i activity unosa
 - ✅ Dark / Light mode
 - ✅ Responsive dizajn (mobile-friendly)
 - ✅ Animacije za novi rekord i kraj timera

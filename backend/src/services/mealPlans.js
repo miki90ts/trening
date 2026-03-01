@@ -1,16 +1,11 @@
 const pool = require("../db/connection");
+const { httpError } = require("../helpers/httpError");
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"];
 
 const computeConsumed = (amountGrams, per100g) => {
   return (amountGrams / 100) * per100g;
 };
-
-function httpError(status, message) {
-  const err = new Error(message);
-  err.status = status;
-  return err;
-}
 
 async function getMealPlans(userId) {
   const [plans] = await pool.query(

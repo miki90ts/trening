@@ -664,46 +664,50 @@ function ResultsPage() {
                       <td>
                         {new Date(r.attempt_date).toLocaleDateString("sr-RS")}
                       </td>
-                      <td className="dt-actions">
-                        <button
-                          className="btn-icon dt-btn dt-btn-view"
-                          onClick={() => setDetailId(r.id)}
-                          title="Pregledaj"
-                        >
-                          <FiEye />
-                        </button>
-                        {(r.user_id === currentUser?.id || isAdmin) && (
-                          <>
-                            <button
-                              className="btn-icon dt-btn dt-btn-edit"
-                              onClick={() => setEditId(r.id)}
-                              title="Izmeni"
-                            >
-                              <FiEdit2 />
-                            </button>
-                            <button
-                              className="btn-icon dt-btn dt-btn-delete"
-                              onClick={async () => {
-                                if (!window.confirm("Obrisati ovaj rezultat?"))
-                                  return;
-                                try {
-                                  await api.deleteResult(r.id);
-                                  setRefreshKey((k) => k + 1);
-                                  toast.success("Rezultat obrisan.");
-                                } catch (err) {
-                                  toast.error(
-                                    "Greška: " +
-                                      (err.response?.data?.error ||
-                                        err.message),
-                                  );
-                                }
-                              }}
-                              title="Obriši"
-                            >
-                              <FiTrash2 />
-                            </button>
-                          </>
-                        )}
+                      <td>
+                        <div className="dt-actions">
+                          <button
+                            className="btn-icon dt-btn dt-btn-view"
+                            onClick={() => setDetailId(r.id)}
+                            title="Pregledaj"
+                          >
+                            <FiEye />
+                          </button>
+                          {(r.user_id === currentUser?.id || isAdmin) && (
+                            <>
+                              <button
+                                className="btn-icon dt-btn dt-btn-edit"
+                                onClick={() => setEditId(r.id)}
+                                title="Izmeni"
+                              >
+                                <FiEdit2 />
+                              </button>
+                              <button
+                                className="btn-icon dt-btn dt-btn-delete"
+                                onClick={async () => {
+                                  if (
+                                    !window.confirm("Obrisati ovaj rezultat?")
+                                  )
+                                    return;
+                                  try {
+                                    await api.deleteResult(r.id);
+                                    setRefreshKey((k) => k + 1);
+                                    toast.success("Rezultat obrisan.");
+                                  } catch (err) {
+                                    toast.error(
+                                      "Greška: " +
+                                        (err.response?.data?.error ||
+                                          err.message),
+                                    );
+                                  }
+                                }}
+                                title="Obriši"
+                              >
+                                <FiTrash2 />
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                     {expandedRows[r.id] && r.sets && r.sets.length > 0 && (

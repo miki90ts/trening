@@ -59,31 +59,33 @@ function ActivityResultsTable({
                 <td>{formatPace(activity.avg_pace_seconds_per_km)}</td>
                 <td>{activity.ascent_meters ?? 0} m</td>
                 <td>{activity.split_count}</td>
-                <td className="dt-actions">
-                  <button
-                    type="button"
-                    className="btn-icon dt-btn dt-btn-view"
-                    onClick={() => onView(activity.id)}
-                    title="Pregledaj"
-                  >
-                    <FiEye />
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-icon dt-btn dt-btn-edit"
-                    onClick={() => onEdit(activity.id)}
-                    title="Izmeni"
-                  >
-                    <FiEdit2 />
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-icon dt-btn dt-btn-delete"
-                    onClick={() => onDelete(activity.id)}
-                    title="Obriši"
-                  >
-                    <FiTrash2 />
-                  </button>
+                <td>
+                  <div className="dt-actions">
+                    <button
+                      type="button"
+                      className="btn-icon dt-btn dt-btn-view"
+                      onClick={() => onView(activity.id)}
+                      title="Pregledaj"
+                    >
+                      <FiEye />
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-icon dt-btn dt-btn-edit"
+                      onClick={() => onEdit(activity.id)}
+                      title="Izmeni"
+                    >
+                      <FiEdit2 />
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-icon dt-btn dt-btn-delete"
+                      onClick={() => onDelete(activity.id)}
+                      title="Obriši"
+                    >
+                      <FiTrash2 />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

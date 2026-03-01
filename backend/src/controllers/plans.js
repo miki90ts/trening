@@ -1,12 +1,8 @@
 const plansService = require("../services/plans");
 const { sendWorkoutScheduleEmail } = require("../helpers/email");
-
-function handleError(err, next, res) {
-  if (err.status) {
-    return res.status(err.status).json({ error: err.message });
-  }
-  return next(err);
-}
+const {
+  handleControllerError: handleError,
+} = require("../helpers/controllerError");
 
 async function getPlans(req, res, next) {
   try {
