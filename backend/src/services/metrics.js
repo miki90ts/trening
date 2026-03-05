@@ -3,7 +3,7 @@ const { toDateOnly, toYmd, addDays } = require("../helpers/date");
 const { toSqlDateTime } = require("../helpers/activities");
 const { httpError } = require("../helpers/httpError");
 
-const VALID_GRANULARITIES = ["7d", "month"];
+const VALID_GRANULARITIES = ["7d", "month", "year"];
 
 function parseWeight(value) {
   const parsed = parseFloat(value);
@@ -22,7 +22,12 @@ function getPeriodRange(granularity, anchorValue) {
   let start;
   let end;
 
-  if (granularitySafe === "month") {
+  if (granularitySafe === "year") {
+    start = new Date(anchor.getFullYear(), 0, 1);
+    start.setHours(0, 0, 0, 0);
+    end = new Date(anchor.getFullYear(), 11, 31);
+    end.setHours(0, 0, 0, 0);
+  } else if (granularitySafe === "month") {
     start = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
     start.setHours(0, 0, 0, 0);
     end = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0);
@@ -231,6 +236,102 @@ async function getPeriodStats(user, query) {
 
   const userId = user.id;
 
+  if (period.granularity === "year") {
+    const [periodRows] = await pool.query(
+      `SELECT
+         DATE_FORMAT(metric_datetime, '%Y-%m-01') AS bucket_key,
+         DATE_FORMAT(metric_datetime, '%Y-%m') AS month_key,
+         AVG(weight_kg) AS avg_weight,
+         COUNT(*) AS entry_count,
+         MIN(weight_kg) AS min_weight,
+         MAX(weight_kg) AS max_weight
+       FROM weight_metrics
+       WHERE user_id = ?
+         AND DATE(metric_datetime) BETWEEN ? AND ?
+       GROUP BY month_key, bucket_key
+       ORDER BY month_key ASC`,
+      [userId, period.startDate, period.endDate],
+    );
+
+    const index = new Map(periodRows.map((row) => [row.month_key, row]));
+    const year = period.startDate.slice(0, 4);
+    const data = [];
+
+    for (let month = 1; month <= 12; month += 1) {
+      const monthStr = String(month).padStart(2, "0");
+      const monthKey = `${year}-${monthStr}`;
+      const bucketKey = `${monthKey}-01`;
+      const source = index.get(monthKey);
+
+      data.push({
+        bucket_key: bucketKey,
+        month_key: monthKey,
+        label: monthKey,
+        avg_weight: source ? parseFloat(source.avg_weight) : 0,
+        entry_count: source ? parseInt(source.entry_count, 10) : 0,
+        min_weight: source ? parseFloat(source.min_weight) : null,
+        max_weight: source ? parseFloat(source.max_weight) : null,
+      });
+    }
+
+    const [periodAggregateRows] = await pool.query(
+      `SELECT
+         AVG(weight_kg) AS period_avg_weight,
+         COUNT(*) AS total_entries
+       FROM weight_metrics
+       WHERE user_id = ?
+         AND DATE(metric_datetime) BETWEEN ? AND ?`,
+      [userId, period.startDate, period.endDate],
+    );
+
+    const [baselineRows] = await pool.query(
+      `SELECT id, metric_datetime, weight_kg
+       FROM weight_metrics
+       WHERE user_id = ?
+         AND DATE(metric_datetime) BETWEEN ? AND ?
+       ORDER BY metric_datetime ASC, id ASC
+       LIMIT 1`,
+      [userId, period.startDate, period.endDate],
+    );
+
+    const [latestRows] = await pool.query(
+      `SELECT id, metric_datetime, weight_kg
+       FROM weight_metrics
+       WHERE user_id = ?
+       ORDER BY metric_datetime DESC, id DESC
+       LIMIT 1`,
+      [userId],
+    );
+
+    const baseline = baselineRows[0] || null;
+    const current = latestRows[0] || null;
+
+    const baselineWeight = baseline ? parseFloat(baseline.weight_kg) : null;
+    const currentWeight = current ? parseFloat(current.weight_kg) : null;
+    const diffKg =
+      baselineWeight !== null && currentWeight !== null
+        ? currentWeight - baselineWeight
+        : null;
+
+    return {
+      period,
+      bucket_type: "month",
+      data,
+      summary: {
+        period_avg_weight: parseFloat(
+          periodAggregateRows[0]?.period_avg_weight || 0,
+        ),
+        total_entries: parseInt(periodAggregateRows[0]?.total_entries || 0, 10),
+        baseline_weight: baselineWeight,
+        baseline_datetime: baseline?.metric_datetime || null,
+        current_weight: currentWeight,
+        current_datetime: current?.metric_datetime || null,
+        difference_kg: diffKg,
+        difference_percent: calcDeltaPercent(currentWeight, baselineWeight),
+      },
+    };
+  }
+
   const [periodRows] = await pool.query(
     `SELECT
        DATE(metric_datetime) AS bucket_key,
@@ -313,6 +414,7 @@ async function getPeriodStats(user, query) {
 
   return {
     period,
+    bucket_type: "day",
     data,
     summary: {
       period_avg_weight: parseFloat(

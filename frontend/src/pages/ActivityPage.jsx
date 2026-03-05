@@ -138,7 +138,7 @@ function ActivityPage() {
         }
       />
 
-      <Card>
+      <Card className="mt-4">
         <h3>Lista aktivnosti</h3>
         <ActivityResultsTable
           activities={activities}

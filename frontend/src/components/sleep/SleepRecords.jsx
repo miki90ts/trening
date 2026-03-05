@@ -1,6 +1,11 @@
 import React from "react";
 import Card from "../common/Card";
-import { formatDuration, formatNumber, formatQuality, toYmd } from "./sleepUtils";
+import {
+  formatDuration,
+  formatNumber,
+  formatQuality,
+  toYmd,
+} from "./sleepUtils";
 import { FiAward } from "react-icons/fi";
 
 function SleepRecords({ records }) {
@@ -9,7 +14,11 @@ function SleepRecords({ records }) {
   const formatRecordDate = (d) => {
     if (!d) return "-";
     const normalizedDate = toYmd(d);
-    return new Date(`${normalizedDate}T00:00:00`).toLocaleDateString("sr-RS", { day: "numeric", month: "short", year: "numeric" });
+    return new Date(`${normalizedDate}T00:00:00`).toLocaleDateString("sr-RS", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
   };
 
   const items = [
@@ -27,7 +36,9 @@ function SleepRecords({ records }) {
     },
     {
       label: "Najniži HR",
-      value: records.lowest_hr?.min_hr ? `${records.lowest_hr.min_hr} bpm` : "-",
+      value: records.lowest_hr?.min_hr
+        ? `${records.lowest_hr.min_hr} bpm`
+        : "-",
       sub: formatRecordDate(records.lowest_hr?.sleep_date),
       icon: "❤️",
     },
@@ -64,8 +75,10 @@ function SleepRecords({ records }) {
   ];
 
   return (
-    <Card className="steps-records-card">
-      <h3><FiAward /> Rekordi</h3>
+    <Card className="steps-records-card mt-3">
+      <h3>
+        <FiAward /> Rekordi
+      </h3>
       <div className="steps-records-grid">
         {items.map((item, i) => (
           <div key={i} className="steps-record-item">

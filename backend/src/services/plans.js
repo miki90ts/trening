@@ -233,8 +233,15 @@ async function schedulePlan(planId, user, payload) {
     );
 
     const [insertSession] = await conn.query(
-      "INSERT INTO workout_sessions (user_id, plan_id, plan_name, scheduled_date, status) VALUES (?, ?, ?, ?, ?)",
-      [targetUserId, planId, plans[0].name, scheduled_date, "scheduled"],
+      "INSERT INTO workout_sessions (user_id, scheduled_by, plan_id, plan_name, scheduled_date, status) VALUES (?, ?, ?, ?, ?, ?)",
+      [
+        targetUserId,
+        user.id,
+        planId,
+        plans[0].name,
+        scheduled_date,
+        "scheduled",
+      ],
     );
     const sessionId = insertSession.insertId;
 
@@ -312,10 +319,14 @@ async function schedulePlan(planId, user, payload) {
   }
 }
 
-async function getSessionsList(userId, query) {
+async function getSessionsList(user, query) {
   const { status, from, to } = query;
-  let where = "WHERE ws.user_id = ?";
-  const values = [userId];
+  const userId = user.id;
+  const role = user.role || "user";
+
+  let where =
+    "WHERE (ws.user_id = ? OR (? = 'admin' AND ws.scheduled_by = ? AND ws.user_id <> ?))";
+  const values = [userId, role, userId, userId];
 
   if (status) {
     where += " AND ws.status = ?";
@@ -333,16 +344,32 @@ async function getSessionsList(userId, query) {
   const [sessions] = await pool.query(
     `
     SELECT ws.*,
+           ws.user_id AS assigned_user_id,
+           ws.scheduled_by,
+           assigned.first_name AS assigned_first_name,
+           assigned.last_name AS assigned_last_name,
+           assigned.nickname AS assigned_nickname,
+           sender.first_name AS scheduled_by_first_name,
+           sender.last_name AS scheduled_by_last_name,
+           sender.nickname AS scheduled_by_nickname,
+           CASE
+             WHEN ws.scheduled_by = ? AND ws.user_id <> ? THEN 'sent_to_other'
+             WHEN ws.user_id = ? AND ws.scheduled_by IS NOT NULL AND ws.scheduled_by <> ? THEN 'sent_to_me'
+             WHEN ws.user_id = ? THEN 'my_plan'
+             ELSE 'other'
+           END AS session_type,
            COUNT(DISTINCT wse.id) as exercise_count,
-           SUM(wse.is_completed) as completed_exercises,
+           COALESCE(SUM(wse.is_completed), 0) as completed_exercises,
            COUNT(DISTINCT wse.id) as total_exercises
     FROM workout_sessions ws
+    LEFT JOIN users assigned ON assigned.id = ws.user_id
+    LEFT JOIN users sender ON sender.id = ws.scheduled_by
     LEFT JOIN workout_session_exercises wse ON wse.session_id = ws.id
     ${where}
     GROUP BY ws.id
     ORDER BY ws.scheduled_date DESC
   `,
-    values,
+    [userId, userId, userId, userId, userId, ...values],
   );
 
   return sessions;
@@ -350,8 +377,26 @@ async function getSessionsList(userId, query) {
 
 async function getSessionById(sessionId, userId) {
   const [sessions] = await pool.query(
-    "SELECT * FROM workout_sessions WHERE id = ? AND user_id = ?",
-    [sessionId, userId],
+    `SELECT ws.*,
+            ws.user_id AS assigned_user_id,
+            assigned.first_name AS assigned_first_name,
+            assigned.last_name AS assigned_last_name,
+            assigned.nickname AS assigned_nickname,
+            sender.first_name AS scheduled_by_first_name,
+            sender.last_name AS scheduled_by_last_name,
+            sender.nickname AS scheduled_by_nickname,
+            CASE
+              WHEN ws.scheduled_by = ? AND ws.user_id <> ? THEN 'sent_to_other'
+              WHEN ws.user_id = ? AND ws.scheduled_by IS NOT NULL AND ws.scheduled_by <> ? THEN 'sent_to_me'
+              WHEN ws.user_id = ? THEN 'my_plan'
+              ELSE 'other'
+            END AS session_type
+     FROM workout_sessions ws
+     LEFT JOIN users assigned ON assigned.id = ws.user_id
+     LEFT JOIN users sender ON sender.id = ws.scheduled_by
+     WHERE ws.id = ?
+       AND (ws.user_id = ? OR ws.scheduled_by = ?)`,
+    [userId, userId, userId, userId, userId, sessionId, userId, userId],
   );
   if (sessions.length === 0) throw httpError(404, "Sesija nije pronađena");
 

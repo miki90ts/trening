@@ -1,13 +1,78 @@
 import React from "react";
+import { FiEdit2, FiTrash2 } from "react-icons/fi";
 import { formatDelta, formatKg } from "./metricsUtils";
+
+const MONTH_NAMES = [
+  "Januar",
+  "Februar",
+  "Mart",
+  "April",
+  "Maj",
+  "Jun",
+  "Jul",
+  "Avgust",
+  "Septembar",
+  "Oktobar",
+  "Novembar",
+  "Decembar",
+];
 
 function MetricsTable({
   rows = [],
+  periodStats,
+  granularity,
   currentWeight,
   periodAverage,
   onEdit,
   onDelete,
 }) {
+  const isYearView = granularity === "year";
+
+  if (isYearView) {
+    const monthlyRows = periodStats?.data || [];
+
+    return (
+      <div className="results-table-wrapper">
+        <table className="results-table">
+          <thead>
+            <tr>
+              <th>Mesec</th>
+              <th>Prosečna kilaža</th>
+              <th>Broj merenja</th>
+            </tr>
+          </thead>
+          <tbody>
+            {monthlyRows.length === 0 ? (
+              <tr>
+                <td colSpan={3} className="empty-state-small">
+                  Nema merenja za izabrani filter.
+                </td>
+              </tr>
+            ) : (
+              monthlyRows.map((row) => {
+                const monthIndex =
+                  parseInt(row.month_key?.split("-")[1], 10) - 1;
+                const year = row.month_key?.split("-")[0];
+                const monthLabel =
+                  monthIndex >= 0 && monthIndex < 12
+                    ? `${MONTH_NAMES[monthIndex]} ${year}`
+                    : row.month_key;
+
+                return (
+                  <tr key={row.month_key || row.bucket_key}>
+                    <td>{monthLabel}</td>
+                    <td>{formatKg(row.avg_weight)}</td>
+                    <td>{row.entry_count || 0}</td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
   return (
     <div className="results-table-wrapper">
       <table className="results-table">
@@ -54,20 +119,22 @@ function MetricsTable({
                   <td>{formatKg(periodAverage)}</td>
                   <td>{row.notes || "-"}</td>
                   <td>
-                    <div className="metrics-table-actions">
+                    <div className="table-actions">
                       <button
                         type="button"
-                        className="btn btn-outline"
+                        className="btn btn-sm btn-ghost"
                         onClick={() => onEdit(row)}
+                        title="Izmeni"
                       >
-                        Izmeni
+                        <FiEdit2 />
                       </button>
                       <button
                         type="button"
-                        className="btn btn-danger"
+                        className="btn btn-sm btn-ghost btn-danger-ghost"
                         onClick={() => onDelete(row)}
+                        title="Obriši"
                       >
-                        Obriši
+                        <FiTrash2 />
                       </button>
                     </div>
                   </td>

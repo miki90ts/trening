@@ -8,6 +8,7 @@ export function exportMetricsPeriodPdf({
   periodLabel,
 }) {
   const doc = new jsPDF();
+  const isYear = periodStats?.period?.granularity === "year";
 
   doc.setFontSize(16);
   doc.text("Metrics - Pregled kilaže", 14, 18);
@@ -57,9 +58,22 @@ export function exportMetricsPeriodPdf({
 
   autoTable(doc, {
     startY: doc.lastAutoTable.finalY + 8,
-    head: [["Datum", "Dnevni prosek (kg)", "Broj merenja"]],
+    head: [
+      [
+        isYear ? "Mesec" : "Datum",
+        isYear ? "Mesečni prosek (kg)" : "Dnevni prosek (kg)",
+        "Broj merenja",
+      ],
+    ],
     body: (periodStats?.data || []).map((row) => [
-      new Date(row.bucket_key).toLocaleDateString("sr-RS"),
+      isYear
+        ? new Date(
+            `${row.month_key || row.bucket_key}T00:00:00`,
+          ).toLocaleDateString("sr-RS", {
+            month: "long",
+            year: "numeric",
+          })
+        : new Date(row.bucket_key).toLocaleDateString("sr-RS"),
       Number.isFinite(parseFloat(row.avg_weight))
         ? parseFloat(row.avg_weight).toFixed(2)
         : "-",

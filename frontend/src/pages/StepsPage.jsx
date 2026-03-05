@@ -16,6 +16,7 @@ import {
 } from "../components/steps/stepsUtils";
 import { useSteps } from "../context/StepsContext";
 import { exportStepsPdf } from "../components/steps/export/exportStepsPdf";
+import { exportStepsCsv } from "../components/steps/export/exportStepsCsv";
 
 function StepsPage() {
   const {
@@ -43,7 +44,7 @@ function StepsPage() {
 
   const periodLabel = useMemo(
     () => formatStepsPeriodTitle(granularity, anchor),
-    [granularity, anchor]
+    [granularity, anchor],
   );
 
   const loadAll = async () => {
@@ -53,7 +54,11 @@ function StepsPage() {
       await Promise.all([
         loadPeriodStats(periodParams),
         loadSummary(periodParams),
-        loadEntries({ start_date: bounds.start, end_date: bounds.end, limit: 1000 }),
+        loadEntries({
+          start_date: bounds.start,
+          end_date: bounds.end,
+          limit: 1000,
+        }),
         loadRecords(),
       ]);
     } catch (err) {
@@ -100,7 +105,8 @@ function StepsPage() {
   };
 
   const handleDelete = async (entry) => {
-    if (!window.confirm("Da li ste sigurni da želite da obrišete ovaj unos?")) return;
+    if (!window.confirm("Da li ste sigurni da želite da obrišete ovaj unos?"))
+      return;
     try {
       await removeEntry(entry.id);
       toast.success("Unos je obrisan.");
@@ -120,6 +126,14 @@ function StepsPage() {
     });
   };
 
+  const handleExportCsv = () => {
+    exportStepsCsv({
+      rows: entries,
+      periodStats,
+      granularity,
+    });
+  };
+
   return (
     <div className="page steps-page">
       <div className="page-header">
@@ -130,10 +144,25 @@ function StepsPage() {
           </p>
         </div>
         <div className="metrics-header-actions">
-          <button type="button" className="btn btn-secondary" onClick={handleExportPdf}>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={handleExportCsv}
+          >
+            Export (CSV)
+          </button>
+          <button
+            type="button"
+            className="btn btn-danger"
+            onClick={handleExportPdf}
+          >
             Export (PDF)
           </button>
-          <button type="button" className="btn btn-primary" onClick={handleOpenAdd}>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={handleOpenAdd}
+          >
             + Dodaj korake
           </button>
         </div>
@@ -146,12 +175,18 @@ function StepsPage() {
           granularity={granularity}
           periodLabel={periodLabel}
           onGranularityChange={setGranularity}
-          onPrevious={() => setAnchor(shiftStepsAnchor(anchor, granularity, -1))}
+          onPrevious={() =>
+            setAnchor(shiftStepsAnchor(anchor, granularity, -1))
+          }
           onNext={() => setAnchor(shiftStepsAnchor(anchor, granularity, 1))}
         />
       </Card>
 
-      <StepsChart periodStats={periodStats} summary={summary} />
+      <StepsChart
+        periodStats={periodStats}
+        summary={summary}
+        granularity={granularity}
+      />
 
       <StepsRecords records={records} />
 
@@ -159,6 +194,8 @@ function StepsPage() {
         <h3>Istorija unosa</h3>
         <StepsTable
           rows={entries}
+          periodStats={periodStats}
+          granularity={granularity}
           onEdit={handleOpenEdit}
           onDelete={handleDelete}
         />

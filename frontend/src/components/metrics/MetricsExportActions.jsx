@@ -6,7 +6,7 @@ function MetricsExportActions({ onExportCsv, onExportPdf }) {
       <button type="button" className="btn btn-secondary" onClick={onExportCsv}>
         Export tabele (CSV)
       </button>
-      <button type="button" className="btn btn-primary" onClick={onExportPdf}>
+      <button type="button" className="btn btn-danger" onClick={onExportPdf}>
         Export perioda (PDF)
       </button>
     </div>

@@ -24,7 +24,7 @@ function CalendarHeader({ currentMonth, onPrev, onNext, onToday }) {
     <div className="calendar-header">
       <div className="calendar-nav">
         <button
-          className="btn btn-icon-round"
+          className="btn-icon-round"
           onClick={onPrev}
           title="Prethodni mesec"
         >
@@ -34,7 +34,7 @@ function CalendarHeader({ currentMonth, onPrev, onNext, onToday }) {
           {monthName} {year}
         </h2>
         <button
-          className="btn btn-icon-round"
+          className="btn-icon-round"
           onClick={onNext}
           title="Sledeći mesec"
         >

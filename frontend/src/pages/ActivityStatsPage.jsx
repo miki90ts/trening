@@ -136,7 +136,7 @@ function ActivityStatsPage() {
           </button>
           <button
             type="button"
-            className="btn btn-secondary"
+            className="btn btn-danger"
             onClick={handleExportPdf}
             disabled={periodExportLoading}
           >

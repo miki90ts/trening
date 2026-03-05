@@ -17,6 +17,7 @@ import {
 } from "../components/sleep/sleepUtils";
 import { useSleep } from "../context/SleepContext";
 import { exportSleepPdf } from "../components/sleep/export/exportSleepPdf";
+import { exportSleepCsv } from "../components/sleep/export/exportSleepCsv";
 
 function SleepPage() {
   const {
@@ -108,7 +109,8 @@ function SleepPage() {
   };
 
   const handleDelete = async (entry) => {
-    if (!window.confirm("Da li ste sigurni da želite da obrišete ovaj unos?")) return;
+    if (!window.confirm("Da li ste sigurni da želite da obrišete ovaj unos?"))
+      return;
     try {
       await removeEntry(entry.id);
       toast.success("Unos je obrisan.");
@@ -129,6 +131,14 @@ function SleepPage() {
     });
   };
 
+  const handleExportCsv = () => {
+    exportSleepCsv({
+      rows: entries,
+      periodStats,
+      granularity,
+    });
+  };
+
   return (
     <div className="page sleep-page">
       <div className="page-header">
@@ -139,10 +149,25 @@ function SleepPage() {
           </p>
         </div>
         <div className="metrics-header-actions">
-          <button type="button" className="btn btn-secondary" onClick={handleExportPdf}>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={handleExportCsv}
+          >
+            Export (CSV)
+          </button>
+          <button
+            type="button"
+            className="btn btn-danger"
+            onClick={handleExportPdf}
+          >
             Export (PDF)
           </button>
-          <button type="button" className="btn btn-primary" onClick={handleOpenAdd}>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={handleOpenAdd}
+          >
             + Dodaj san
           </button>
         </div>
@@ -157,12 +182,18 @@ function SleepPage() {
           granularity={granularity}
           periodLabel={periodLabel}
           onGranularityChange={setGranularity}
-          onPrevious={() => setAnchor(shiftSleepAnchor(anchor, granularity, -1))}
+          onPrevious={() =>
+            setAnchor(shiftSleepAnchor(anchor, granularity, -1))
+          }
           onNext={() => setAnchor(shiftSleepAnchor(anchor, granularity, 1))}
         />
       </Card>
 
-      <SleepChart periodStats={periodStats} summary={summary} />
+      <SleepChart
+        periodStats={periodStats}
+        summary={summary}
+        granularity={granularity}
+      />
 
       <SleepRecords records={records} />
 
@@ -170,6 +201,8 @@ function SleepPage() {
         <h3>Istorija unosa</h3>
         <SleepTable
           rows={entries}
+          periodStats={periodStats}
+          granularity={granularity}
           onEdit={handleOpenEdit}
           onDelete={handleDelete}
         />

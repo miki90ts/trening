@@ -24,12 +24,12 @@ function MetricsPeriodControls({
       </div>
 
       <div className="analytics-period-nav">
-        <button className="btn btn-outline" onClick={onPrevious}>
-          <FiChevronLeft /> Nazad
+        <button className="btn btn-ghost" onClick={onPrevious}>
+          <FiChevronLeft />
         </button>
         <span className="analytics-period-label">{periodLabel}</span>
-        <button className="btn btn-outline" onClick={onNext}>
-          Napred <FiChevronRight />
+        <button className="btn btn-ghost" onClick={onNext}>
+          <FiChevronRight />
         </button>
       </div>
     </div>

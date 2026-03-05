@@ -36,7 +36,7 @@ function ExerciseCardsView({
                 {exercise.categories.map((category) => (
                   <li key={category.id}>
                     <span
-                      className="cat-color-dot"
+                      className="cat-color-dot mr-2"
                       style={{ backgroundColor: category.color || "#6366f1" }}
                     />
                     <span className="cat-name">{category.name}</span>

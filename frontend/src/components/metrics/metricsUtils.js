@@ -1,6 +1,7 @@
 export const METRICS_PERIOD_OPTIONS = [
   { key: "7d", label: "7 dana" },
   { key: "month", label: "Mesec" },
+  { key: "year", label: "Godina" },
 ];
 
 export const toDateOnly = (value) => {
@@ -25,6 +26,12 @@ export const toYmd = (value) => {
 export const getPeriodBounds = (granularity, anchorDate) => {
   const anchor = toDateOnly(anchorDate);
 
+  if (granularity === "year") {
+    const start = new Date(anchor.getFullYear(), 0, 1);
+    const end = new Date(anchor.getFullYear(), 11, 31);
+    return { start: toYmd(start), end: toYmd(end) };
+  }
+
   if (granularity === "month") {
     const start = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
     const end = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0);
@@ -42,7 +49,9 @@ export const shiftMetricsAnchor = (currentAnchor, granularity, direction) => {
   const date = toDateOnly(currentAnchor);
   const step = direction >= 0 ? 1 : -1;
 
-  if (granularity === "month") {
+  if (granularity === "year") {
+    date.setFullYear(date.getFullYear() + step);
+  } else if (granularity === "month") {
     date.setMonth(date.getMonth() + step);
   } else {
     date.setDate(date.getDate() + 7 * step);
@@ -53,6 +62,10 @@ export const shiftMetricsAnchor = (currentAnchor, granularity, direction) => {
 
 export const formatMetricsPeriodTitle = (granularity, anchorDate) => {
   const anchor = toDateOnly(anchorDate);
+
+  if (granularity === "year") {
+    return `${anchor.getFullYear()}`;
+  }
 
   if (granularity === "month") {
     return anchor.toLocaleDateString("sr-RS", {

@@ -7,21 +7,31 @@ function SleepSummaryCards({ summary }) {
 
   const todayDuration = summary.today?.duration_min;
   const target = summary.current_target || 480;
-  const todayPct = todayDuration ? Math.min(100, Math.round((todayDuration / target) * 100)) : 0;
+  const todayPct = todayDuration
+    ? Math.min(100, Math.round((todayDuration / target) * 100))
+    : 0;
   const targetMet = todayDuration && todayDuration >= target;
 
   return (
     <div className="steps-summary-grid">
-      <Card className={`steps-summary-card steps-today-card ${targetMet ? "steps-goal-met" : ""}`}>
+      <Card
+        className={`steps-summary-card steps-today-card ${targetMet ? "steps-goal-met" : ""}`}
+      >
         <div className="steps-today-head">
           <div className="steps-today-ring">
             <svg viewBox="0 0 100 100" className="steps-ring-svg">
               <circle cx="50" cy="50" r="42" className="steps-ring-bg" />
               <circle
-                cx="50" cy="50" r="42"
+                cx="50"
+                cy="50"
+                r="42"
                 className="steps-ring-fill"
                 strokeDasharray={`${todayPct * 2.64} 264`}
-                style={{ stroke: targetMet ? "var(--accent-success)" : "var(--accent-primary)" }}
+                style={{
+                  stroke: targetMet
+                    ? "var(--accent-success)"
+                    : "var(--accent-primary)",
+                }}
               />
             </svg>
             <span className="steps-ring-text">🌙</span>
@@ -37,21 +47,24 @@ function SleepSummaryCards({ summary }) {
       <Card className="steps-summary-card">
         <small>Prosečno spavanja</small>
         <p>{formatDuration(summary.avg_duration)}</p>
-      </Card>
 
-      <Card className="steps-summary-card">
         <small>Prosečan kvalitet</small>
         <p>{formatQuality(summary.avg_quality)}</p>
       </Card>
 
       <Card className="steps-summary-card">
         <small>Prosečan HR / HRV</small>
-        <p>{formatNumber(summary.avg_hr)} bpm · {formatNumber(summary.avg_hrv)} ms</p>
+        <p>
+          {formatNumber(summary.avg_hr)} bpm · {formatNumber(summary.avg_hrv)}{" "}
+          ms
+        </p>
       </Card>
 
       <Card className="steps-summary-card">
         <small>Cilj ispunjen</small>
-        <p>{summary.days_target_met}/{summary.total_days} dana</p>
+        <p>
+          {summary.days_target_met}/{summary.total_days} dana
+        </p>
       </Card>
     </div>
   );

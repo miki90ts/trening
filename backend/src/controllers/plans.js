@@ -84,7 +84,7 @@ async function schedulePlan(req, res, next) {
 
 async function getSessionsList(req, res, next) {
   try {
-    const sessions = await plansService.getSessionsList(req.user.id, req.query);
+    const sessions = await plansService.getSessionsList(req.user, req.query);
     res.json(sessions);
   } catch (err) {
     handleError(err, next, res);

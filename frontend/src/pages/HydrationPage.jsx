@@ -158,7 +158,7 @@ function HydrationPage() {
         <div className="metrics-header-actions">
           <button
             type="button"
-            className="btn btn-secondary"
+            className="btn btn-danger"
             onClick={handleExportPdf}
           >
             Export (PDF)
@@ -195,7 +195,7 @@ function HydrationPage() {
         />
       </Card>
 
-      <HydrationChart 
+      <HydrationChart
         periodStats={periodStats}
         summary={summary}
         granularity={granularity}

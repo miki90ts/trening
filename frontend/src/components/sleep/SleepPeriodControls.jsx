@@ -1,24 +1,35 @@
 import React from "react";
+import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { SLEEP_PERIOD_OPTIONS } from "./sleepUtils";
 
-function SleepPeriodControls({ granularity, periodLabel, onGranularityChange, onPrevious, onNext }) {
+function SleepPeriodControls({
+  granularity,
+  periodLabel,
+  onGranularityChange,
+  onPrevious,
+  onNext,
+}) {
   return (
-    <div className="steps-period-controls">
-      <div className="steps-period-buttons">
+    <div className="analytics-period-controls">
+      <div className="analytics-period-toggle">
         {SLEEP_PERIOD_OPTIONS.map((opt) => (
           <button
             key={opt.key}
-            className={`btn btn-sm ${granularity === opt.key ? "btn-primary" : "btn-ghost"}`}
+            className={`analytics-period-btn ${granularity === opt.key ? "active" : ""}`}
             onClick={() => onGranularityChange(opt.key)}
           >
             {opt.label}
           </button>
         ))}
       </div>
-      <div className="steps-period-nav">
-        <button className="btn btn-sm btn-ghost" onClick={onPrevious}>◀</button>
-        <span className="steps-period-label">{periodLabel}</span>
-        <button className="btn btn-sm btn-ghost" onClick={onNext}>▶</button>
+      <div className="analytics-period-nav">
+        <button className="btn btn-ghost" onClick={onPrevious}>
+          <FiChevronLeft />
+        </button>
+        <span className="analytics-period-label">{periodLabel}</span>
+        <button className="btn btn-ghost" onClick={onNext}>
+          <FiChevronRight />
+        </button>
       </div>
     </div>
   );

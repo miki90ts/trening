@@ -56,7 +56,7 @@ function Navbar() {
     { to: "/leaderboard", label: "Rang lista", icon: <FiBarChart2 /> },
     { to: "/analytics", label: "Analitika", icon: <FiTrendingUp /> },
     { to: "/activity", label: "Activity", icon: <FiActivity /> },
-    { to: "/plans", label: "Planovi", icon: <FiClipboard /> },
+    { to: "/plans", label: "Plan vežbanja", icon: <FiClipboard /> },
     { to: "/meal-plans", label: "Plan ishrane", icon: <FiBookOpen /> },
   ];
 

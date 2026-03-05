@@ -44,7 +44,7 @@ function MetricsSummaryCards({ summary, periodLabel }) {
             <h4>Trenutna kilaža</h4>
             <p>{formatKg(summary?.current_weight)}</p>
             <small>
-              Poslednji unos:{" "}
+              Poslednji unos: <br />
               {summary?.current_datetime
                 ? new Date(summary.current_datetime).toLocaleString("sr-RS")
                 : "-"}

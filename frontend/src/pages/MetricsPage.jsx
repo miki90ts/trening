@@ -43,6 +43,7 @@ function MetricsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null);
   const [saving, setSaving] = useState(false);
+  const isYearView = granularity === "year";
 
   const periodLabel = useMemo(
     () => formatMetricsPeriodTitle(granularity, anchor),
@@ -75,7 +76,7 @@ function MetricsPage() {
       await Promise.all([
         loadPeriodStats(periodParams),
         loadSummary(periodParams),
-        selectedDate
+        selectedDate && !isYearView
           ? loadEntries({ date: selectedDate, limit: 1000 })
           : loadEntries({
               start_date: bounds.start,
@@ -193,6 +194,8 @@ function MetricsPage() {
         />
       </Card>
 
+      <MetricsChart periodStats={periodStats} granularity={granularity} />
+
       <Card className="metrics-filter-card">
         <div className="metrics-filter-row">
           <div className="form-group metrics-date-filter">
@@ -202,19 +205,20 @@ function MetricsPage() {
               type="date"
               value={selectedDate}
               onChange={(event) => setSelectedDate(event.target.value)}
+              disabled={isYearView}
             />
           </div>
           <button
             type="button"
             className="btn btn-outline"
             onClick={() => setSelectedDate("")}
-            disabled={!selectedDate}
+            disabled={!selectedDate || isYearView}
           >
             Reset datuma
           </button>
         </div>
 
-        {selectedDateInsight && (
+        {selectedDateInsight && !isYearView && (
           <p className="metrics-date-insight">
             Izabrani datum vs trenutna kilaža:{" "}
             {formatDelta(selectedDateInsight.diff)} (
@@ -223,12 +227,12 @@ function MetricsPage() {
         )}
       </Card>
 
-      <MetricsChart periodStats={periodStats} />
-
       <Card>
         <h3>Istorija merenja</h3>
         <MetricsTable
           rows={entries}
+          periodStats={periodStats}
+          granularity={granularity}
           currentWeight={summary?.current_weight}
           periodAverage={summary?.period_avg_weight}
           onEdit={handleOpenEdit}
