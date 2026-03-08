@@ -1,6 +1,64 @@
 const pool = require("../db/connection");
 const { httpError } = require("../helpers/httpError");
 
+const PAGE_SIZE_OPTIONS = [10, 20, 25, 50];
+
+const PLAN_SORT_MAP = {
+  updated_at: "wp.updated_at",
+  created_at: "wp.created_at",
+  name: "wp.name",
+  exercise_count: "exercise_count",
+};
+
+const SESSION_SORT_MAP = {
+  scheduled_date: "ws.scheduled_date",
+  plan_name: "ws.plan_name",
+  status: "ws.status",
+  created_at: "ws.created_at",
+  exercise_count: "exercise_count",
+};
+
+function toPositiveInt(value) {
+  const parsed = parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return null;
+  }
+  return parsed;
+}
+
+function parsePagination(query, defaultPageSize = 10) {
+  const hasPagination =
+    query.page !== undefined || query.pageSize !== undefined;
+
+  if (!hasPagination) {
+    return {
+      hasPagination: false,
+      page: 1,
+      pageSize: defaultPageSize,
+      offset: 0,
+    };
+  }
+
+  const page = Math.max(1, toPositiveInt(query.page) || 1);
+  const requestedPageSize = toPositiveInt(query.pageSize) || defaultPageSize;
+  const pageSize = PAGE_SIZE_OPTIONS.includes(requestedPageSize)
+    ? requestedPageSize
+    : defaultPageSize;
+
+  return {
+    hasPagination: true,
+    page,
+    pageSize,
+    offset: (page - 1) * pageSize,
+  };
+}
+
+function getSortSql(sortMap, sort, order, fallback, tieBreakerColumn) {
+  const sortColumn = sortMap[sort] || sortMap[fallback];
+  const safeOrder = String(order).toLowerCase() === "asc" ? "ASC" : "DESC";
+  return `${sortColumn} ${safeOrder}, ${tieBreakerColumn} DESC`;
+}
+
 const SCORE_SQL = `
   CASE 
     WHEN c.has_weight = 1 THEN COALESCE(SUM(ws.reps * ws.weight), 0)
@@ -8,18 +66,87 @@ const SCORE_SQL = `
   END
 `;
 
-async function getPlans(userId) {
+async function getPlans(userId, query = {}) {
+  const { q = "", sort = "updated_at", order = "desc" } = query;
+  const pagination = parsePagination(query, 10);
+  const filters = ["wp.user_id = ?"];
+  const values = [userId];
+
+  const normalizedQuery = String(q).trim();
+  if (normalizedQuery) {
+    const like = `%${normalizedQuery}%`;
+    filters.push(`(
+      wp.name LIKE ?
+      OR COALESCE(wp.description, '') LIKE ?
+      OR EXISTS (
+        SELECT 1
+        FROM workout_plan_exercises wpe_search
+        JOIN categories c_search ON c_search.id = wpe_search.category_id
+        JOIN exercises e_search ON e_search.id = c_search.exercise_id
+        WHERE wpe_search.plan_id = wp.id
+          AND (
+            c_search.name LIKE ?
+            OR e_search.name LIKE ?
+          )
+      )
+    )`);
+    values.push(like, like, like, like);
+  }
+
+  const whereSql = `WHERE ${filters.join(" AND ")}`;
+  const orderSql = getSortSql(
+    PLAN_SORT_MAP,
+    sort,
+    order,
+    "updated_at",
+    "wp.id",
+  );
+
+  if (pagination.hasPagination) {
+    const [countRows] = await pool.query(
+      `SELECT COUNT(*) AS total
+       FROM workout_plans wp
+       ${whereSql}`,
+      values,
+    );
+
+    const total = countRows[0]?.total || 0;
+    const [plans] = await pool.query(
+      `
+      SELECT wp.*, 
+             COUNT(DISTINCT wpe.id) AS exercise_count
+      FROM workout_plans wp
+      LEFT JOIN workout_plan_exercises wpe ON wpe.plan_id = wp.id
+      ${whereSql}
+      GROUP BY wp.id
+      ORDER BY ${orderSql}
+      LIMIT ? OFFSET ?
+    `,
+      [...values, pagination.pageSize, pagination.offset],
+    );
+
+    return {
+      data: plans,
+      pagination: {
+        page: pagination.page,
+        pageSize: pagination.pageSize,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / pagination.pageSize)),
+      },
+    };
+  }
+
   const [plans] = await pool.query(
     `
     SELECT wp.*, 
-           COUNT(DISTINCT wpe.id) as exercise_count
+           COUNT(DISTINCT wpe.id) AS exercise_count
     FROM workout_plans wp
     LEFT JOIN workout_plan_exercises wpe ON wpe.plan_id = wp.id
-    WHERE wp.user_id = ?
+    ${whereSql}
     GROUP BY wp.id
-    ORDER BY wp.updated_at DESC
+    ORDER BY ${orderSql}
   `,
-    [userId],
+    values,
   );
 
   return plans;
@@ -320,13 +447,37 @@ async function schedulePlan(planId, user, payload) {
 }
 
 async function getSessionsList(user, query) {
-  const { status, from, to } = query;
+  const {
+    status,
+    from,
+    to,
+    q = "",
+    scope = "sessions",
+    sort = "scheduled_date",
+    order = "desc",
+  } = query;
   const userId = user.id;
   const role = user.role || "user";
+  const pagination = parsePagination(query, 10);
 
-  let where =
-    "WHERE (ws.user_id = ? OR (? = 'admin' AND ws.scheduled_by = ? AND ws.user_id <> ?))";
-  const values = [userId, role, userId, userId];
+  if (!["sessions", "sent"].includes(scope)) {
+    throw httpError(400, "scope nije validan");
+  }
+
+  if (scope === "sent" && role !== "admin") {
+    throw httpError(403, "Nemate dozvolu za ovu akciju");
+  }
+
+  let where = "WHERE 1 = 1";
+  const values = [];
+
+  if (scope === "sent") {
+    where += " AND ws.scheduled_by = ? AND ws.user_id <> ?";
+    values.push(userId, userId);
+  } else {
+    where += " AND ws.user_id = ?";
+    values.push(userId);
+  }
 
   if (status) {
     where += " AND ws.status = ?";
@@ -341,6 +492,125 @@ async function getSessionsList(user, query) {
     values.push(to);
   }
 
+  const normalizedQuery = String(q).trim();
+  if (normalizedQuery) {
+    const like = `%${normalizedQuery}%`;
+    where += ` AND (
+      ws.plan_name LIKE ?
+      OR COALESCE(wp.description, '') LIKE ?
+      OR ws.status LIKE ?
+      OR COALESCE(assigned.nickname, '') LIKE ?
+      OR COALESCE(assigned.first_name, '') LIKE ?
+      OR COALESCE(assigned.last_name, '') LIKE ?
+      OR COALESCE(sender.nickname, '') LIKE ?
+      OR COALESCE(sender.first_name, '') LIKE ?
+      OR COALESCE(sender.last_name, '') LIKE ?
+      OR EXISTS (
+        SELECT 1
+        FROM workout_session_exercises wse_search
+        JOIN categories c_search ON c_search.id = wse_search.category_id
+        JOIN exercises e_search ON e_search.id = c_search.exercise_id
+        WHERE wse_search.session_id = ws.id
+          AND (
+            c_search.name LIKE ?
+            OR e_search.name LIKE ?
+          )
+      )
+    )`;
+    values.push(
+      like,
+      like,
+      like,
+      like,
+      like,
+      like,
+      like,
+      like,
+      like,
+      like,
+      like,
+    );
+  }
+
+  const sessionTypeCase = `
+    CASE
+      WHEN ws.scheduled_by = ? AND ws.user_id <> ? THEN 'sent_to_other'
+      WHEN ws.user_id = ? AND ws.scheduled_by IS NOT NULL AND ws.scheduled_by <> ? THEN 'sent_to_me'
+      WHEN ws.user_id = ? THEN 'my_plan'
+      ELSE 'other'
+    END
+  `;
+  const orderSql = getSortSql(
+    SESSION_SORT_MAP,
+    sort,
+    order,
+    "scheduled_date",
+    "ws.id",
+  );
+
+  if (pagination.hasPagination) {
+    const [countRows] = await pool.query(
+      `
+      SELECT COUNT(*) AS total
+      FROM workout_sessions ws
+      LEFT JOIN users assigned ON assigned.id = ws.user_id
+      LEFT JOIN users sender ON sender.id = ws.scheduled_by
+      LEFT JOIN workout_plans wp ON wp.id = ws.plan_id
+      ${where}
+    `,
+      values,
+    );
+
+    const total = countRows[0]?.total || 0;
+    const [sessions] = await pool.query(
+      `
+      SELECT ws.*, 
+             ws.id AS id,
+             ws.user_id AS assigned_user_id,
+             ws.scheduled_by,
+             assigned.first_name AS assigned_first_name,
+             assigned.last_name AS assigned_last_name,
+             assigned.nickname AS assigned_nickname,
+             sender.first_name AS scheduled_by_first_name,
+             sender.last_name AS scheduled_by_last_name,
+             sender.nickname AS scheduled_by_nickname,
+             ${sessionTypeCase} AS session_type,
+             COUNT(DISTINCT wse.id) AS exercise_count,
+             COALESCE(SUM(CASE WHEN wse.is_completed = 1 THEN 1 ELSE 0 END), 0) AS completed_exercises,
+             COUNT(DISTINCT wse.id) AS total_exercises
+      FROM workout_sessions ws
+      LEFT JOIN users assigned ON assigned.id = ws.user_id
+      LEFT JOIN users sender ON sender.id = ws.scheduled_by
+      LEFT JOIN workout_plans wp ON wp.id = ws.plan_id
+      LEFT JOIN workout_session_exercises wse ON wse.session_id = ws.id
+      ${where}
+      GROUP BY ws.id
+      ORDER BY ${orderSql}
+      LIMIT ? OFFSET ?
+    `,
+      [
+        userId,
+        userId,
+        userId,
+        userId,
+        userId,
+        ...values,
+        pagination.pageSize,
+        pagination.offset,
+      ],
+    );
+
+    return {
+      data: sessions,
+      pagination: {
+        page: pagination.page,
+        pageSize: pagination.pageSize,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / pagination.pageSize)),
+      },
+    };
+  }
+
   const [sessions] = await pool.query(
     `
     SELECT ws.*,
@@ -352,22 +622,18 @@ async function getSessionsList(user, query) {
            sender.first_name AS scheduled_by_first_name,
            sender.last_name AS scheduled_by_last_name,
            sender.nickname AS scheduled_by_nickname,
-           CASE
-             WHEN ws.scheduled_by = ? AND ws.user_id <> ? THEN 'sent_to_other'
-             WHEN ws.user_id = ? AND ws.scheduled_by IS NOT NULL AND ws.scheduled_by <> ? THEN 'sent_to_me'
-             WHEN ws.user_id = ? THEN 'my_plan'
-             ELSE 'other'
-           END AS session_type,
-           COUNT(DISTINCT wse.id) as exercise_count,
-           COALESCE(SUM(wse.is_completed), 0) as completed_exercises,
-           COUNT(DISTINCT wse.id) as total_exercises
+           ${sessionTypeCase} AS session_type,
+           COUNT(DISTINCT wse.id) AS exercise_count,
+           COALESCE(SUM(CASE WHEN wse.is_completed = 1 THEN 1 ELSE 0 END), 0) AS completed_exercises,
+           COUNT(DISTINCT wse.id) AS total_exercises
     FROM workout_sessions ws
     LEFT JOIN users assigned ON assigned.id = ws.user_id
     LEFT JOIN users sender ON sender.id = ws.scheduled_by
+    LEFT JOIN workout_plans wp ON wp.id = ws.plan_id
     LEFT JOIN workout_session_exercises wse ON wse.session_id = ws.id
     ${where}
     GROUP BY ws.id
-    ORDER BY ws.scheduled_date DESC
+    ORDER BY ${orderSql}
   `,
     [userId, userId, userId, userId, userId, ...values],
   );

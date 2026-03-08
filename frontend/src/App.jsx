@@ -86,14 +86,6 @@ function App() {
             }
           />
           <Route
-            path="/exercises"
-            element={
-              <ProtectedRoute>
-                <ExercisesPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
             path="/results"
             element={
               <ProtectedRoute>
@@ -240,6 +232,22 @@ function App() {
             }
           />
           <Route
+            path="/plans/sessions"
+            element={
+              <ProtectedRoute>
+                <PlansPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/plans/sent"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <PlansPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/plans/new"
             element={
               <ProtectedRoute>
@@ -277,6 +285,22 @@ function App() {
             path="/meal-plans"
             element={
               <ProtectedRoute>
+                <MealPlansPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/meal-plans/sessions"
+            element={
+              <ProtectedRoute>
+                <MealPlansPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/meal-plans/sent"
+            element={
+              <ProtectedRoute requiredRole="admin">
                 <MealPlansPage />
               </ProtectedRoute>
             }
@@ -328,6 +352,14 @@ function App() {
             element={
               <ProtectedRoute requiredRole="admin">
                 <AdminUsersPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/exercises"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <ExercisesPage />
               </ProtectedRoute>
             }
           />

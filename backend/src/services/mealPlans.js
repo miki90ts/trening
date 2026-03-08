@@ -2,23 +2,151 @@ const pool = require("../db/connection");
 const { httpError } = require("../helpers/httpError");
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"];
+const PAGE_SIZE_OPTIONS = [10, 20, 25, 50];
+
+const PLAN_SORT_MAP = {
+  updated_at: "mp.updated_at",
+  created_at: "mp.created_at",
+  name: "mp.name",
+  meal_count: "meal_count",
+};
+
+const SESSION_SORT_MAP = {
+  scheduled_date: "ms.scheduled_date",
+  plan_name: "ms.plan_name",
+  status: "ms.status",
+  created_at: "ms.created_at",
+  meal_count: "meal_count",
+};
+
+function toPositiveInt(value) {
+  const parsed = parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return null;
+  }
+  return parsed;
+}
+
+function parsePagination(query, defaultPageSize = 10) {
+  const hasPagination =
+    query.page !== undefined || query.pageSize !== undefined;
+
+  if (!hasPagination) {
+    return {
+      hasPagination: false,
+      page: 1,
+      pageSize: defaultPageSize,
+      offset: 0,
+    };
+  }
+
+  const page = Math.max(1, toPositiveInt(query.page) || 1);
+  const requestedPageSize = toPositiveInt(query.pageSize) || defaultPageSize;
+  const pageSize = PAGE_SIZE_OPTIONS.includes(requestedPageSize)
+    ? requestedPageSize
+    : defaultPageSize;
+
+  return {
+    hasPagination: true,
+    page,
+    pageSize,
+    offset: (page - 1) * pageSize,
+  };
+}
+
+function getSortSql(sortMap, sort, order, fallback, tieBreakerColumn) {
+  const sortColumn = sortMap[sort] || sortMap[fallback];
+  const safeOrder = String(order).toLowerCase() === "asc" ? "ASC" : "DESC";
+  return `${sortColumn} ${safeOrder}, ${tieBreakerColumn} DESC`;
+}
 
 const computeConsumed = (amountGrams, per100g) => {
   return (amountGrams / 100) * per100g;
 };
 
-async function getMealPlans(userId) {
+async function getMealPlans(userId, query = {}) {
+  const { q = "", sort = "updated_at", order = "desc" } = query;
+  const pagination = parsePagination(query, 10);
+  const filters = ["mp.user_id = ?"];
+  const values = [userId];
+
+  const normalizedQuery = String(q).trim();
+  if (normalizedQuery) {
+    const like = `%${normalizedQuery}%`;
+    filters.push(`(
+      mp.name LIKE ?
+      OR COALESCE(mp.description, '') LIKE ?
+      OR EXISTS (
+        SELECT 1
+        FROM meal_plan_meals mpm_search
+        LEFT JOIN meal_plan_items mpi_search ON mpi_search.plan_meal_id = mpm_search.id
+        LEFT JOIN food_items fi_search ON fi_search.id = mpi_search.food_item_id
+        WHERE mpm_search.plan_id = mp.id
+          AND (
+            mpm_search.meal_type LIKE ?
+            OR COALESCE(mpm_search.notes, '') LIKE ?
+            OR COALESCE(mpi_search.custom_name, '') LIKE ?
+            OR COALESCE(fi_search.name, '') LIKE ?
+          )
+      )
+    )`);
+    values.push(like, like, like, like, like, like);
+  }
+
+  const whereSql = `WHERE ${filters.join(" AND ")}`;
+  const orderSql = getSortSql(
+    PLAN_SORT_MAP,
+    sort,
+    order,
+    "updated_at",
+    "mp.id",
+  );
+
+  if (pagination.hasPagination) {
+    const [countRows] = await pool.query(
+      `SELECT COUNT(*) AS total
+       FROM meal_plans mp
+       ${whereSql}`,
+      values,
+    );
+
+    const total = countRows[0]?.total || 0;
+    const [plans] = await pool.query(
+      `
+        SELECT mp.*, 
+               COUNT(DISTINCT mpm.id) AS meal_count
+        FROM meal_plans mp
+        LEFT JOIN meal_plan_meals mpm ON mpm.plan_id = mp.id
+        ${whereSql}
+        GROUP BY mp.id
+        ORDER BY ${orderSql}
+        LIMIT ? OFFSET ?
+      `,
+      [...values, pagination.pageSize, pagination.offset],
+    );
+
+    return {
+      data: plans,
+      pagination: {
+        page: pagination.page,
+        pageSize: pagination.pageSize,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / pagination.pageSize)),
+      },
+    };
+  }
+
   const [plans] = await pool.query(
     `
       SELECT mp.*, 
-             COUNT(DISTINCT mpm.id) as meal_count
+             COUNT(DISTINCT mpm.id) AS meal_count
       FROM meal_plans mp
       LEFT JOIN meal_plan_meals mpm ON mpm.plan_id = mp.id
+      ${whereSql}
       GROUP BY mp.id
-      HAVING mp.user_id = ?
-      ORDER BY mp.updated_at DESC
+      ORDER BY ${orderSql}
     `,
-    [userId],
+    values,
   );
   return plans;
 }
@@ -291,8 +419,15 @@ async function scheduleMealPlan(planId, user, payload) {
     );
 
     const [insertSession] = await conn.query(
-      "INSERT INTO meal_sessions (user_id, plan_id, plan_name, scheduled_date, status) VALUES (?, ?, ?, ?, ?)",
-      [targetUserId, planId, plans[0].name, scheduled_date, "scheduled"],
+      "INSERT INTO meal_sessions (user_id, scheduled_by, plan_id, plan_name, scheduled_date, status) VALUES (?, ?, ?, ?, ?, ?)",
+      [
+        targetUserId,
+        user.id,
+        planId,
+        plans[0].name,
+        scheduled_date,
+        "scheduled",
+      ],
     );
     const sessionId = insertSession.insertId;
 
@@ -364,10 +499,38 @@ async function scheduleMealPlan(planId, user, payload) {
   }
 }
 
-async function getMealSessionsList(userId, query) {
-  const { status, from, to } = query;
-  let where = "WHERE ms.user_id = ?";
-  const values = [userId];
+async function getMealSessionsList(user, query) {
+  const {
+    status,
+    from,
+    to,
+    q = "",
+    scope = "sessions",
+    sort = "scheduled_date",
+    order = "desc",
+  } = query;
+  const userId = user.id;
+  const role = user.role || "user";
+  const pagination = parsePagination(query, 10);
+
+  if (!["sessions", "sent"].includes(scope)) {
+    throw httpError(400, "scope nije validan");
+  }
+
+  if (scope === "sent" && role !== "admin") {
+    throw httpError(403, "Nemate dozvolu za ovu akciju");
+  }
+
+  let where = "WHERE 1 = 1";
+  const values = [];
+
+  if (scope === "sent") {
+    where += " AND ms.scheduled_by = ? AND ms.user_id <> ?";
+    values.push(userId, userId);
+  } else {
+    where += " AND ms.user_id = ?";
+    values.push(userId);
+  }
 
   if (status) {
     where += " AND ms.status = ?";
@@ -382,19 +545,151 @@ async function getMealSessionsList(userId, query) {
     values.push(to);
   }
 
+  const normalizedQuery = String(q).trim();
+  if (normalizedQuery) {
+    const like = `%${normalizedQuery}%`;
+    where += ` AND (
+      ms.plan_name LIKE ?
+      OR COALESCE(mp.description, '') LIKE ?
+      OR ms.status LIKE ?
+      OR COALESCE(assigned.nickname, '') LIKE ?
+      OR COALESCE(assigned.first_name, '') LIKE ?
+      OR COALESCE(assigned.last_name, '') LIKE ?
+      OR COALESCE(sender.nickname, '') LIKE ?
+      OR COALESCE(sender.first_name, '') LIKE ?
+      OR COALESCE(sender.last_name, '') LIKE ?
+      OR EXISTS (
+        SELECT 1
+        FROM meal_session_meals msm_search
+        LEFT JOIN meal_session_items msi_search ON msi_search.session_meal_id = msm_search.id
+        LEFT JOIN food_items fi_search ON fi_search.id = msi_search.food_item_id
+        WHERE msm_search.session_id = ms.id
+          AND (
+            msm_search.meal_type LIKE ?
+            OR COALESCE(msm_search.notes, '') LIKE ?
+            OR COALESCE(msi_search.custom_name, '') LIKE ?
+            OR COALESCE(fi_search.name, '') LIKE ?
+          )
+      )
+    )`;
+    values.push(
+      like,
+      like,
+      like,
+      like,
+      like,
+      like,
+      like,
+      like,
+      like,
+      like,
+      like,
+      like,
+      like,
+    );
+  }
+
+  const sessionTypeCase = `
+    CASE
+      WHEN ms.scheduled_by = ? AND ms.user_id <> ? THEN 'sent_to_other'
+      WHEN ms.user_id = ? AND ms.scheduled_by IS NOT NULL AND ms.scheduled_by <> ? THEN 'sent_to_me'
+      WHEN ms.user_id = ? THEN 'my_plan'
+      ELSE 'other'
+    END
+  `;
+  const orderSql = getSortSql(
+    SESSION_SORT_MAP,
+    sort,
+    order,
+    "scheduled_date",
+    "ms.id",
+  );
+
+  if (pagination.hasPagination) {
+    const [countRows] = await pool.query(
+      `
+        SELECT COUNT(*) AS total
+        FROM meal_sessions ms
+        LEFT JOIN users assigned ON assigned.id = ms.user_id
+        LEFT JOIN users sender ON sender.id = ms.scheduled_by
+        LEFT JOIN meal_plans mp ON mp.id = ms.plan_id
+        ${where}
+      `,
+      values,
+    );
+
+    const total = countRows[0]?.total || 0;
+    const [sessions] = await pool.query(
+      `
+        SELECT ms.*, 
+               ms.user_id AS assigned_user_id,
+               assigned.first_name AS assigned_first_name,
+               assigned.last_name AS assigned_last_name,
+               assigned.nickname AS assigned_nickname,
+               sender.first_name AS scheduled_by_first_name,
+               sender.last_name AS scheduled_by_last_name,
+               sender.nickname AS scheduled_by_nickname,
+               ${sessionTypeCase} AS session_type,
+               COUNT(DISTINCT msm.id) AS meal_count,
+               COALESCE(SUM(CASE WHEN msm.is_completed = 1 THEN 1 ELSE 0 END), 0) AS completed_meals,
+               COUNT(DISTINCT msm.id) AS total_meals
+        FROM meal_sessions ms
+        LEFT JOIN users assigned ON assigned.id = ms.user_id
+        LEFT JOIN users sender ON sender.id = ms.scheduled_by
+        LEFT JOIN meal_plans mp ON mp.id = ms.plan_id
+        LEFT JOIN meal_session_meals msm ON msm.session_id = ms.id
+        ${where}
+        GROUP BY ms.id
+        ORDER BY ${orderSql}
+        LIMIT ? OFFSET ?
+      `,
+      [
+        userId,
+        userId,
+        userId,
+        userId,
+        userId,
+        ...values,
+        pagination.pageSize,
+        pagination.offset,
+      ],
+    );
+
+    return {
+      data: sessions,
+      pagination: {
+        page: pagination.page,
+        pageSize: pagination.pageSize,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / pagination.pageSize)),
+      },
+    };
+  }
+
   const [sessions] = await pool.query(
     `
       SELECT ms.*,
-             COUNT(DISTINCT msm.id) as meal_count,
-             SUM(msm.is_completed) as completed_meals,
-             COUNT(DISTINCT msm.id) as total_meals
+             ms.user_id AS assigned_user_id,
+             assigned.first_name AS assigned_first_name,
+             assigned.last_name AS assigned_last_name,
+             assigned.nickname AS assigned_nickname,
+             sender.first_name AS scheduled_by_first_name,
+             sender.last_name AS scheduled_by_last_name,
+             sender.nickname AS scheduled_by_nickname,
+             ${sessionTypeCase} AS session_type,
+             COUNT(DISTINCT msm.id) AS meal_count,
+             COALESCE(SUM(CASE WHEN msm.is_completed = 1 THEN 1 ELSE 0 END), 0) AS completed_meals,
+             COUNT(DISTINCT msm.id) AS total_meals
       FROM meal_sessions ms
+      LEFT JOIN users assigned ON assigned.id = ms.user_id
+      LEFT JOIN users sender ON sender.id = ms.scheduled_by
+      LEFT JOIN meal_plans mp ON mp.id = ms.plan_id
       LEFT JOIN meal_session_meals msm ON msm.session_id = ms.id
       ${where}
       GROUP BY ms.id
-      ORDER BY ms.scheduled_date DESC
+      ORDER BY ${orderSql}
     `,
-    values,
+    [userId, userId, userId, userId, userId, ...values],
   );
 
   return sessions;
@@ -402,8 +697,26 @@ async function getMealSessionsList(userId, query) {
 
 async function getMealSessionById(sessionId, userId) {
   const [sessions] = await pool.query(
-    "SELECT * FROM meal_sessions WHERE id = ? AND user_id = ?",
-    [sessionId, userId],
+    `SELECT ms.*, 
+            ms.user_id AS assigned_user_id,
+            assigned.first_name AS assigned_first_name,
+            assigned.last_name AS assigned_last_name,
+            assigned.nickname AS assigned_nickname,
+            sender.first_name AS scheduled_by_first_name,
+            sender.last_name AS scheduled_by_last_name,
+            sender.nickname AS scheduled_by_nickname,
+            CASE
+              WHEN ms.scheduled_by = ? AND ms.user_id <> ? THEN 'sent_to_other'
+              WHEN ms.user_id = ? AND ms.scheduled_by IS NOT NULL AND ms.scheduled_by <> ? THEN 'sent_to_me'
+              WHEN ms.user_id = ? THEN 'my_plan'
+              ELSE 'other'
+            END AS session_type
+     FROM meal_sessions ms
+     LEFT JOIN users assigned ON assigned.id = ms.user_id
+     LEFT JOIN users sender ON sender.id = ms.scheduled_by
+     WHERE ms.id = ?
+       AND (ms.user_id = ? OR ms.scheduled_by = ?)`,
+    [userId, userId, userId, userId, userId, sessionId, userId, userId],
   );
   if (sessions.length === 0) throw httpError(404, "Sesija nije pronađena");
 

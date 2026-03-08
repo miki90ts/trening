@@ -6,7 +6,7 @@ const {
 
 async function getPlans(req, res, next) {
   try {
-    const plans = await plansService.getPlans(req.user.id);
+    const plans = await plansService.getPlans(req.user.id, req.query);
     res.json(plans);
   } catch (err) {
     handleError(err, next, res);

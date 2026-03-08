@@ -1,125 +1,182 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import * as api from "../services/api";
 import { useAuth } from "../context/AuthContext";
-import Loading from "../components/common/Loading";
 import PlanDetailModal from "../components/plans/PlanDetailModal";
+import SectionedCollectionShell from "../components/plans/SectionedCollectionShell";
 import {
-  FiPlus,
-  FiEye,
-  FiEdit2,
-  FiTrash2,
   FiCalendar,
-  FiPlay,
-  FiClock,
   FiCheckCircle,
-  FiXCircle,
+  FiChevronLeft,
+  FiChevronRight,
+  FiChevronsLeft,
+  FiChevronsRight,
   FiClipboard,
-  FiList,
   FiCopy,
+  FiEdit2,
+  FiEye,
+  FiList,
+  FiPlay,
+  FiTrash2,
   FiUser,
+  FiXCircle,
 } from "react-icons/fi";
+import {
+  getPageNumbers,
+  useSectionedCollectionPage,
+} from "../components/plans/useSectionedCollectionPage";
+
+const SECTION_ITEMS = [
+  {
+    key: "plans",
+    path: "/plans",
+    label: "Moji planovi",
+    title: "📋 Moji planovi treninga",
+    icon: <FiClipboard />,
+    emptyTitle: "Nema planova",
+    emptyText: "Kreiraj prvi plan treninga ili proširi pretragu.",
+    searchPlaceholder: "Naziv, opis, vežbe, kategorije, status ili korisnik",
+  },
+  {
+    key: "sessions",
+    path: "/plans/sessions",
+    label: "Sesije",
+    title: "📅 Sesije treninga",
+    icon: <FiList />,
+    emptyTitle: "Nema sesija",
+    emptyText: "Zakazani i poslati treninzi će se prikazati ovde.",
+    searchPlaceholder: "Naziv, opis, vežbe, kategorije, status ili korisnik",
+  },
+  {
+    key: "sent",
+    path: "/plans/sent",
+    label: "Poslate sesije",
+    title: "📤 Poslate sesije",
+    icon: <FiCalendar />,
+    emptyTitle: "Nema poslatih sesija",
+    emptyText: "Sesije koje pošalješ drugim korisnicima biće prikazane ovde.",
+    searchPlaceholder: "Naziv, opis, vežbe, kategorije, status ili korisnik",
+  },
+];
+
+const SORT_OPTIONS = {
+  plans: [
+    { value: "updated_at", label: "Poslednja izmena" },
+    { value: "name", label: "Naziv" },
+    { value: "exercise_count", label: "Broj vežbi" },
+    { value: "created_at", label: "Datum kreiranja" },
+  ],
+  sessions: [
+    { value: "scheduled_date", label: "Datum" },
+    { value: "status", label: "Status" },
+    { value: "plan_name", label: "Naziv plana" },
+    { value: "exercise_count", label: "Broj vežbi" },
+  ],
+  sent: [
+    { value: "scheduled_date", label: "Datum" },
+    { value: "status", label: "Status" },
+    { value: "plan_name", label: "Naziv plana" },
+    { value: "exercise_count", label: "Broj vežbi" },
+  ],
+};
+
+const DEFAULT_SORTS = {
+  plans: { sort: "updated_at", order: "desc" },
+  sessions: { sort: "scheduled_date", order: "desc" },
+  sent: { sort: "scheduled_date", order: "desc" },
+};
 
 function PlansPage() {
   const navigate = useNavigate();
-  const { user, isAdmin } = useAuth();
-  const [plans, setPlans] = useState([]);
-  const [sessions, setSessions] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { isAdmin } = useAuth();
   const [detailPlanId, setDetailPlanId] = useState(null);
-  const [scheduleId, setScheduleId] = useState(null);
-  const [scheduleDate, setScheduleDate] = useState(
-    new Date().toISOString().slice(0, 10),
-  );
-  const [scheduleUserId, setScheduleUserId] = useState("");
-  const [users, setUsers] = useState([]);
-  const [tab, setTab] = useState("plans"); // 'plans' | 'sessions' | 'sent'
 
-  const getSessionType = (session) => {
-    if (session?.session_type) return session.session_type;
-    const currentUserId = user?.id;
-    if (!currentUserId) return "other";
-
-    const assignedUserId = parseInt(
-      session?.assigned_user_id ?? session?.user_id,
-      10,
-    );
-    const scheduledBy = parseInt(session?.scheduled_by, 10);
-
-    if (
-      Number.isInteger(scheduledBy) &&
-      scheduledBy === currentUserId &&
-      assignedUserId !== currentUserId
-    ) {
-      return "sent_to_other";
-    }
-
-    if (assignedUserId === currentUserId) {
-      if (Number.isInteger(scheduledBy) && scheduledBy !== currentUserId) {
-        return "sent_to_me";
-      }
-      return "my_plan";
-    }
-
-    return "other";
-  };
-
-  const sessionsTabItems = sessions.filter((session) => {
-    const type = getSessionType(session);
-    return type === "my_plan" || type === "sent_to_me";
+  const {
+    activeSection,
+    sectionConfig,
+    visibleSections,
+    viewMode,
+    setViewMode,
+    queryInput,
+    setQueryInput,
+    statusInput,
+    setStatusInput,
+    fromInput,
+    setFromInput,
+    toInput,
+    setToInput,
+    sortInput,
+    setSortInput,
+    orderInput,
+    setOrderInput,
+    listState,
+    tablePage,
+    setTablePage,
+    tablePageSize,
+    setTablePageSize,
+    scheduleId,
+    setScheduleId,
+    scheduleDate,
+    setScheduleDate,
+    scheduleUserId,
+    setScheduleUserId,
+    users,
+    usersLoading,
+    loadMoreRef,
+    refreshCurrentView,
+    loadMoreCards,
+    handleApplyFilters,
+    handleResetFilters,
+    isSessionSection,
+    hasMoreCards,
+    hasFiltersApplied,
+    selectedScheduledItem,
+  } = useSectionedCollectionPage({
+    sectionItems: SECTION_ITEMS,
+    defaultSectionKey: "plans",
+    isAdmin,
+    fetchPlans: api.getPlans,
+    fetchSessions: api.getSessions,
+    loadUsersRequest: api.getUsers,
+    defaultSortBySection: DEFAULT_SORTS,
   });
 
-  const sentSessions = isAdmin
-    ? sessions.filter((session) => getSessionType(session) === "sent_to_other")
-    : [];
-
-  const loadData = useCallback(async () => {
-    try {
-      const promises = [api.getPlans(), api.getSessions()];
-      if (isAdmin) promises.push(api.getUsers());
-      const results = await Promise.all(promises);
-      setPlans(results[0]);
-      setSessions(results[1]);
-      if (isAdmin && results[2]) setUsers(results[2]);
-    } catch (err) {
-      toast.error("Greška pri učitavanju");
-    } finally {
-      setLoading(false);
-    }
-  }, [isAdmin]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
   const handleDeletePlan = async (id) => {
-    if (!window.confirm("Obriši ovaj plan?")) return;
+    if (!window.confirm("Obriši ovaj plan?")) {
+      return;
+    }
+
     try {
       await api.deletePlan(id);
       toast.success("Plan obrisan");
-      loadData();
+      await refreshCurrentView();
     } catch (err) {
       toast.error("Greška: " + (err.response?.data?.error || err.message));
     }
   };
 
   const handleSchedule = async () => {
-    if (!scheduleId || !scheduleDate) return;
+    if (!scheduleId || !scheduleDate) {
+      return;
+    }
+
     if (isAdmin && !scheduleUserId) {
       toast.warn("Izaberi korisnika za koga zakazuješ trening.");
       return;
     }
+
     try {
       const data = { scheduled_date: scheduleDate };
       if (isAdmin && scheduleUserId) {
         data.user_id = parseInt(scheduleUserId, 10);
       }
+
       const result = await api.schedulePlan(scheduleId, data);
-      toast.success(result.message || "Trening zakazan! 📅");
+      toast.success(result.message || "Trening zakazan");
       setScheduleId(null);
       setScheduleUserId("");
-      loadData();
+      await refreshCurrentView();
     } catch (err) {
       toast.error("Greška: " + (err.response?.data?.error || err.message));
     }
@@ -135,11 +192,14 @@ function PlansPage() {
   };
 
   const handleDeleteSession = async (id) => {
-    if (!window.confirm("Otkaži ovu sesiju?")) return;
+    if (!window.confirm("Otkaži ovu sesiju?")) {
+      return;
+    }
+
     try {
       await api.deleteSession(id);
       toast.success("Sesija otkazana");
-      loadData();
+      await refreshCurrentView();
     } catch (err) {
       toast.error("Greška: " + (err.response?.data?.error || err.message));
     }
@@ -168,321 +228,562 @@ function PlansPage() {
         cls: "badge-skipped",
       },
     };
-    const s = map[status] || map.scheduled;
+    const statusConfig = map[status] || map.scheduled;
+
     return (
-      <span className={`session-status-badge ${s.cls}`}>
-        {s.icon} {s.label}
+      <span className={`session-status-badge ${statusConfig.cls}`}>
+        {statusConfig.icon} {statusConfig.label}
       </span>
     );
   };
 
-  const formatDate = (d) => {
-    if (!d) return "-";
-    return new Date(d).toLocaleDateString("sr-Latn-RS", {
+  const formatDate = (value) => {
+    if (!value) {
+      return "-";
+    }
+
+    return new Date(value).toLocaleDateString("sr-Latn-RS", {
       day: "numeric",
       month: "short",
       year: "numeric",
     });
   };
 
-  if (loading) return <Loading />;
-
-  return (
-    <div className="page plans-page">
-      <div className="page-header">
-        <h1 className="page-title">📋 Planovi treninga</h1>
+  const renderPlanCard = (plan) => (
+    <div
+      key={plan.id}
+      className="plan-card"
+      style={{ borderTopColor: plan.color || "#6366f1" }}
+    >
+      <div className="plan-card-header">
+        <div
+          className="plan-card-color"
+          style={{ background: plan.color || "#6366f1" }}
+        />
+        <div className="plan-card-title">
+          <h3>{plan.name}</h3>
+          {plan.description && <p>{plan.description}</p>}
+        </div>
+      </div>
+      <div className="plan-card-meta plan-card-meta-grid">
+        <span>{plan.exercise_count} vežbi</span>
+        <span>Ažurirano: {formatDate(plan.updated_at)}</span>
+      </div>
+      <div className="plan-card-actions">
         <button
-          className="btn btn-primary"
-          onClick={() => navigate("/plans/new")}
+          className="btn btn-sm btn-ghost"
+          onClick={() => setDetailPlanId(plan.id)}
+          title="Detalji"
         >
-          <FiPlus /> Novi plan
+          <FiEye />
+        </button>
+        <button
+          className="btn btn-sm btn-ghost"
+          onClick={() => navigate(`/plans/${plan.id}/edit`)}
+          title="Izmeni"
+        >
+          <FiEdit2 />
+        </button>
+        <button
+          className="btn btn-sm btn-ghost"
+          onClick={() => navigate(`/plans/new?copyFrom=${plan.id}`)}
+          title="Kopiraj"
+        >
+          <FiCopy />
+        </button>
+        <button
+          className="btn btn-sm btn-ghost"
+          onClick={() => setScheduleId(plan.id)}
+          title="Zakaži"
+        >
+          <FiCalendar />
+        </button>
+        <button
+          className="btn btn-sm btn-ghost btn-danger-ghost"
+          onClick={() => handleDeletePlan(plan.id)}
+          title="Obriši"
+        >
+          <FiTrash2 />
         </button>
       </div>
 
-      {/* Tabs */}
-      <div className="plans-tabs">
-        <button
-          className={`plans-tab ${tab === "plans" ? "active" : ""}`}
-          onClick={() => setTab("plans")}
-        >
-          <FiClipboard /> Moji planovi ({plans.length})
-        </button>
-        <button
-          className={`plans-tab ${tab === "sessions" ? "active" : ""}`}
-          onClick={() => setTab("sessions")}
-        >
-          <FiList /> Sesije ({sessionsTabItems.length})
-        </button>
-        {isAdmin && (
-          <button
-            className={`plans-tab ${tab === "sent" ? "active" : ""}`}
-            onClick={() => setTab("sent")}
-          >
-            <FiCalendar /> Poslate sesije ({sentSessions.length})
-          </button>
-        )}
-      </div>
-
-      {/* PLANS TAB */}
-      {tab === "plans" && (
-        <div className="plans-grid">
-          {plans.length === 0 ? (
-            <div className="empty-state">
-              <FiClipboard size={48} />
-              <h3>Nema planova</h3>
-              <p>Kreiraj prvi plan treninga!</p>
-              <button
-                className="btn btn-primary"
-                onClick={() => navigate("/plans/new")}
+      {scheduleId === plan.id && (
+        <div className="plan-schedule-popover">
+          {isAdmin && (
+            <div className="form-group">
+              <label className="form-label">
+                <FiUser size={13} /> Korisnik
+              </label>
+              <select
+                value={scheduleUserId}
+                onChange={(event) => setScheduleUserId(event.target.value)}
+                className="form-control"
+                disabled={usersLoading}
               >
-                <FiPlus /> Kreiraj plan
+                <option value="">— Izaberi korisnika —</option>
+                {users.map((entry) => (
+                  <option key={entry.id} value={entry.id}>
+                    {entry.nickname ||
+                      `${entry.first_name} ${entry.last_name || ""}`.trim()}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          <div className="form-group">
+            <label className="form-label">
+              <FiCalendar size={13} /> Datum
+            </label>
+            <input
+              type="date"
+              value={scheduleDate}
+              onChange={(event) => setScheduleDate(event.target.value)}
+              className="form-control"
+            />
+          </div>
+          <div className="plan-schedule-inline">
+            <button className="btn btn-sm btn-primary" onClick={handleSchedule}>
+              Zakaži
+            </button>
+            <button
+              className="btn btn-sm btn-ghost"
+              onClick={() => {
+                setScheduleId(null);
+                setScheduleUserId("");
+              }}
+            >
+              Otkaži
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderSessionCard = (session) => {
+    const assigneeName =
+      session.assigned_nickname ||
+      [session.assigned_first_name, session.assigned_last_name]
+        .filter(Boolean)
+        .join(" ") ||
+      "Korisnik";
+    const senderName =
+      session.scheduled_by_nickname ||
+      [session.scheduled_by_first_name, session.scheduled_by_last_name]
+        .filter(Boolean)
+        .join(" ") ||
+      "Korisnik";
+
+    return (
+      <div key={session.id} className="session-card">
+        <div className="session-card-left">
+          {getStatusBadge(session.status)}
+          <div className="session-card-info">
+            <strong>{session.plan_name}</strong>
+            <span className="session-card-date">
+              <FiCalendar size={12} /> {formatDate(session.scheduled_date)}
+            </span>
+            <span className="session-card-exercises">
+              {activeSection === "sent" ? (
+                <>
+                  <FiUser size={12} /> {assigneeName} · {session.exercise_count}{" "}
+                  vežbi
+                </>
+              ) : session.session_type === "sent_to_me" ? (
+                <>
+                  <FiUser size={12} /> Poslao: {senderName} ·{" "}
+                  {session.exercise_count} vežbi
+                </>
+              ) : (
+                <>{session.exercise_count} vežbi</>
+              )}
+              {(session.status === "in_progress" ||
+                session.status === "completed") &&
+                ` · ${session.completed_exercises || 0}/${session.total_exercises} završeno`}
+            </span>
+          </div>
+        </div>
+        <div className="session-card-actions">
+          {session.status === "scheduled" && activeSection !== "sent" && (
+            <button
+              className="btn btn-sm btn-primary"
+              onClick={() => handleStartSession(session.id)}
+            >
+              <FiPlay /> Započni
+            </button>
+          )}
+          {session.status === "in_progress" && activeSection !== "sent" && (
+            <button
+              className="btn btn-sm btn-primary"
+              onClick={() => navigate(`/plans/session/${session.id}`)}
+            >
+              <FiPlay /> Nastavi
+            </button>
+          )}
+          <button
+            className="btn btn-sm btn-ghost"
+            onClick={() => navigate(`/plans/session/${session.id}/detail`)}
+          >
+            <FiEye /> {activeSection === "sent" ? "Pregled" : "Detalji"}
+          </button>
+          {activeSection !== "sent" && session.status !== "completed" && (
+            <button
+              className="btn btn-sm btn-ghost btn-danger-ghost"
+              onClick={() => handleDeleteSession(session.id)}
+            >
+              <FiTrash2 />
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderTable = () => {
+    const page = listState.pagination.page || 1;
+    const totalPages = listState.pagination.totalPages || 1;
+    const total = listState.pagination.total || 0;
+    const startIndex =
+      total === 0 ? 0 : (page - 1) * listState.pagination.pageSize + 1;
+    const endIndex = Math.min(page * listState.pagination.pageSize, total);
+
+    return (
+      <>
+        <div className="results-table-wrapper plans-table-wrapper">
+          <table className="results-table dt-table">
+            <thead>
+              {activeSection === "plans" ? (
+                <tr>
+                  <th>Naziv</th>
+                  <th>Opis</th>
+                  <th>Vežbe</th>
+                  <th>Ažurirano</th>
+                  <th className="dt-actions-col">Akcije</th>
+                </tr>
+              ) : (
+                <tr>
+                  <th>Plan</th>
+                  <th>Datum</th>
+                  <th>Status</th>
+                  <th>Napredak</th>
+                  {activeSection === "sent" && <th>Korisnik</th>}
+                  <th className="dt-actions-col">Akcije</th>
+                </tr>
+              )}
+            </thead>
+            <tbody>
+              {activeSection === "plans"
+                ? listState.items.map((plan) => (
+                    <tr key={plan.id}>
+                      <td>
+                        <div className="plans-table-name-cell">
+                          <span
+                            className="plan-card-color"
+                            style={{ background: plan.color || "#6366f1" }}
+                          />
+                          <span>{plan.name}</span>
+                        </div>
+                      </td>
+                      <td>{plan.description || "—"}</td>
+                      <td>{plan.exercise_count}</td>
+                      <td>{formatDate(plan.updated_at)}</td>
+                      <td>
+                        <div className="dt-actions">
+                          <button
+                            className="btn-icon dt-btn dt-btn-view"
+                            onClick={() => setDetailPlanId(plan.id)}
+                            title="Detalji"
+                          >
+                            <FiEye />
+                          </button>
+                          <button
+                            className="btn-icon dt-btn dt-btn-edit"
+                            onClick={() => navigate(`/plans/${plan.id}/edit`)}
+                            title="Izmeni"
+                          >
+                            <FiEdit2 />
+                          </button>
+                          <button
+                            className="btn-icon dt-btn dt-btn-view"
+                            onClick={() =>
+                              navigate(`/plans/new?copyFrom=${plan.id}`)
+                            }
+                            title="Kopiraj"
+                          >
+                            <FiCopy />
+                          </button>
+                          <button
+                            className="btn-icon dt-btn dt-btn-edit"
+                            onClick={() => setScheduleId(plan.id)}
+                            title="Zakaži"
+                          >
+                            <FiCalendar />
+                          </button>
+                          <button
+                            className="btn-icon dt-btn dt-btn-delete"
+                            onClick={() => handleDeletePlan(plan.id)}
+                            title="Obriši"
+                          >
+                            <FiTrash2 />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                : listState.items.map((session) => {
+                    const assigneeName =
+                      session.assigned_nickname ||
+                      [session.assigned_first_name, session.assigned_last_name]
+                        .filter(Boolean)
+                        .join(" ") ||
+                      "Korisnik";
+
+                    return (
+                      <tr key={session.id}>
+                        <td>{session.plan_name}</td>
+                        <td>{formatDate(session.scheduled_date)}</td>
+                        <td>{getStatusBadge(session.status)}</td>
+                        <td>
+                          {session.completed_exercises || 0}/
+                          {session.total_exercises || session.exercise_count}
+                        </td>
+                        {activeSection === "sent" && <td>{assigneeName}</td>}
+                        <td>
+                          <div className="dt-actions">
+                            {session.status === "scheduled" &&
+                              activeSection !== "sent" && (
+                                <button
+                                  className="btn-icon dt-btn dt-btn-edit"
+                                  onClick={() => handleStartSession(session.id)}
+                                  title="Započni"
+                                >
+                                  <FiPlay />
+                                </button>
+                              )}
+                            {session.status === "in_progress" &&
+                              activeSection !== "sent" && (
+                                <button
+                                  className="btn-icon dt-btn dt-btn-edit"
+                                  onClick={() =>
+                                    navigate(`/plans/session/${session.id}`)
+                                  }
+                                  title="Nastavi"
+                                >
+                                  <FiPlay />
+                                </button>
+                              )}
+                            <button
+                              className="btn-icon dt-btn dt-btn-view"
+                              onClick={() =>
+                                navigate(`/plans/session/${session.id}/detail`)
+                              }
+                              title="Detalji"
+                            >
+                              <FiEye />
+                            </button>
+                            {activeSection !== "sent" &&
+                              session.status !== "completed" && (
+                                <button
+                                  className="btn-icon dt-btn dt-btn-delete"
+                                  onClick={() =>
+                                    handleDeleteSession(session.id)
+                                  }
+                                  title="Otkaži"
+                                >
+                                  <FiTrash2 />
+                                </button>
+                              )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+            </tbody>
+          </table>
+        </div>
+
+        {totalPages > 1 && (
+          <div className="dt-pagination">
+            <span className="dt-pagination-info">
+              Prikazano {startIndex}–{endIndex} od {total}
+            </span>
+            <div className="dt-pagination-controls">
+              <button
+                className="dt-page-btn"
+                onClick={() => setTablePage(1)}
+                disabled={page === 1}
+              >
+                <FiChevronsLeft />
+              </button>
+              <button
+                className="dt-page-btn"
+                onClick={() => setTablePage((prev) => Math.max(1, prev - 1))}
+                disabled={page === 1}
+              >
+                <FiChevronLeft />
+              </button>
+
+              {getPageNumbers(page, totalPages).map((pageNumber) => (
+                <button
+                  key={pageNumber}
+                  className={`dt-page-btn ${pageNumber === page ? "active" : ""}`}
+                  onClick={() => setTablePage(pageNumber)}
+                >
+                  {pageNumber}
+                </button>
+              ))}
+
+              <button
+                className="dt-page-btn"
+                onClick={() =>
+                  setTablePage((prev) => Math.min(totalPages, prev + 1))
+                }
+                disabled={page === totalPages}
+              >
+                <FiChevronRight />
+              </button>
+              <button
+                className="dt-page-btn"
+                onClick={() => setTablePage(totalPages)}
+                disabled={page === totalPages}
+              >
+                <FiChevronsRight />
               </button>
             </div>
-          ) : (
-            plans.map((plan) => (
-              <div
-                key={plan.id}
-                className="plan-card"
-                style={{ borderTopColor: plan.color || "#6366f1" }}
+          </div>
+        )}
+      </>
+    );
+  };
+
+  return (
+    <SectionedCollectionShell
+      sectionConfig={sectionConfig}
+      visibleSections={visibleSections}
+      activeSection={activeSection}
+      onSectionChange={navigate}
+      createPath="/plans/new"
+      createLabel="Novi plan"
+      emptyActionLabel="Kreiraj plan"
+      onCreate={() => navigate("/plans/new")}
+      subtitle="Svaka sekcija učitava samo svoje podatke i podržava card i tabelarni prikaz."
+      viewMode={viewMode}
+      setViewMode={setViewMode}
+      queryInput={queryInput}
+      setQueryInput={setQueryInput}
+      statusInput={statusInput}
+      setStatusInput={setStatusInput}
+      fromInput={fromInput}
+      setFromInput={setFromInput}
+      toInput={toInput}
+      setToInput={setToInput}
+      sortInput={sortInput}
+      setSortInput={setSortInput}
+      orderInput={orderInput}
+      setOrderInput={setOrderInput}
+      sortOptions={SORT_OPTIONS[activeSection]}
+      tablePageSize={tablePageSize}
+      setTablePageSize={setTablePageSize}
+      isSessionSection={isSessionSection}
+      handleApplyFilters={handleApplyFilters}
+      handleResetFilters={handleResetFilters}
+      loading={listState.loading}
+      hasItems={listState.items.length > 0}
+      hasFiltersApplied={hasFiltersApplied}
+    >
+      {viewMode === "card" ? (
+        <>
+          <div
+            className={
+              activeSection === "plans" ? "plans-grid" : "sessions-list"
+            }
+          >
+            {activeSection === "plans"
+              ? listState.items.map((plan) => renderPlanCard(plan))
+              : listState.items.map((session) => renderSessionCard(session))}
+          </div>
+
+          <div className="plans-card-footer">
+            <span className="plans-card-summary">
+              Prikazano {listState.items.length} od {listState.pagination.total}
+            </span>
+            {hasMoreCards && (
+              <button
+                className="btn btn-secondary"
+                onClick={loadMoreCards}
+                disabled={listState.loadingMore}
               >
-                <div className="plan-card-header">
-                  <div
-                    className="plan-card-color"
-                    style={{ background: plan.color || "#6366f1" }}
-                  />
-                  <div className="plan-card-title">
-                    <h3>{plan.name}</h3>
-                    {plan.description && <p>{plan.description}</p>}
-                  </div>
-                </div>
-                <div className="plan-card-meta">
-                  <span>{plan.exercise_count} vežbi</span>
-                </div>
-                <div className="plan-card-actions">
-                  <button
-                    className="btn btn-sm btn-ghost"
-                    onClick={() => setDetailPlanId(plan.id)}
-                    title="Detalji"
-                  >
-                    <FiEye />
-                  </button>
-                  <button
-                    className="btn btn-sm btn-ghost"
-                    onClick={() => navigate(`/plans/${plan.id}/edit`)}
-                    title="Izmeni"
-                  >
-                    <FiEdit2 />
-                  </button>
-                  <button
-                    className="btn btn-sm btn-ghost"
-                    onClick={() => navigate(`/plans/new?copyFrom=${plan.id}`)}
-                    title="Kopiraj"
-                  >
-                    <FiCopy />
-                  </button>
-                  <button
-                    className="btn btn-sm btn-ghost"
-                    onClick={() => setScheduleId(plan.id)}
-                    title="Zakaži"
-                  >
-                    <FiCalendar />
-                  </button>
-                  <button
-                    className="btn btn-sm btn-ghost btn-danger-ghost"
-                    onClick={() => handleDeletePlan(plan.id)}
-                    title="Obriši"
-                  >
-                    <FiTrash2 />
-                  </button>
-                </div>
-
-                {/* Schedule popover */}
-                {scheduleId === plan.id && (
-                  <div className="plan-schedule-popover">
-                    {isAdmin && (
-                      <div className="form-group">
-                        <label className="form-label">
-                          <FiUser size={13} /> Korisnik
-                        </label>
-                        <select
-                          value={scheduleUserId}
-                          onChange={(e) => setScheduleUserId(e.target.value)}
-                          className="form-control"
-                        >
-                          <option value="">— Izaberi korisnika —</option>
-                          {users.map((u) => (
-                            <option key={u.id} value={u.id}>
-                              {u.nickname ||
-                                `${u.first_name} ${u.last_name || ""}`.trim()}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-                    <div className="form-group">
-                      <label className="form-label">
-                        <FiCalendar size={13} /> Datum
-                      </label>
-                      <input
-                        type="date"
-                        value={scheduleDate}
-                        onChange={(e) => setScheduleDate(e.target.value)}
-                        className="form-control"
-                      />
-                    </div>
-                    <div className="plan-schedule-inline">
-                      <button
-                        className="btn btn-sm btn-primary"
-                        onClick={handleSchedule}
-                      >
-                        Zakaži
-                      </button>
-                      <button
-                        className="btn btn-sm btn-ghost"
-                        onClick={() => {
-                          setScheduleId(null);
-                          setScheduleUserId("");
-                        }}
-                      >
-                        Otkaži
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
+                {listState.loadingMore ? "Učitavanje..." : "Prikaži više"}
+              </button>
+            )}
+          </div>
+          <div ref={loadMoreRef} className="plans-load-more-sentinel" />
+        </>
+      ) : (
+        renderTable()
       )}
 
-      {/* SESSIONS TAB */}
-      {tab === "sessions" && (
-        <div className="sessions-list">
-          {sessionsTabItems.length === 0 ? (
-            <div className="empty-state">
-              <FiCalendar size={48} />
-              <h3>Nema sesija</h3>
-              <p>Zakaži plan da bi kreirao sesiju.</p>
+      {activeSection === "plans" && viewMode === "table" && scheduleId && (
+        <div className="card plans-inline-scheduler">
+          <div className="plans-inline-scheduler-header">
+            <h3>Zakaži plan</h3>
+            <span>{selectedScheduledItem?.name || "Izabrani plan"}</span>
+          </div>
+          {isAdmin && (
+            <div className="form-group">
+              <label className="form-label">
+                <FiUser size={13} /> Korisnik
+              </label>
+              <select
+                value={scheduleUserId}
+                onChange={(event) => setScheduleUserId(event.target.value)}
+                className="form-control"
+                disabled={usersLoading}
+              >
+                <option value="">— Izaberi korisnika —</option>
+                {users.map((entry) => (
+                  <option key={entry.id} value={entry.id}>
+                    {entry.nickname ||
+                      `${entry.first_name} ${entry.last_name || ""}`.trim()}
+                  </option>
+                ))}
+              </select>
             </div>
-          ) : (
-            sessionsTabItems.map((s) => (
-              <div key={s.id} className="session-card">
-                <div className="session-card-left">
-                  {getStatusBadge(s.status)}
-                  <div className="session-card-info">
-                    <strong>{s.plan_name}</strong>
-                    <span className="session-card-date">
-                      <FiCalendar size={12} /> {formatDate(s.scheduled_date)}
-                    </span>
-                    <span className="session-card-exercises">
-                      {s.exercise_count} vežbi
-                      {s.status === "in_progress" &&
-                        ` · ${s.completed_exercises || 0}/${s.total_exercises} završeno`}
-                    </span>
-                  </div>
-                </div>
-                <div className="session-card-actions">
-                  {s.status === "scheduled" && (
-                    <button
-                      className="btn btn-sm btn-primary"
-                      onClick={() => handleStartSession(s.id)}
-                    >
-                      <FiPlay /> Započni
-                    </button>
-                  )}
-                  {s.status === "in_progress" && (
-                    <button
-                      className="btn btn-sm btn-primary"
-                      onClick={() => navigate(`/plans/session/${s.id}`)}
-                    >
-                      <FiPlay /> Nastavi
-                    </button>
-                  )}
-                  {s.status === "completed" && (
-                    <button
-                      className="btn btn-sm btn-ghost"
-                      onClick={() => navigate(`/plans/session/${s.id}/detail`)}
-                    >
-                      <FiEye /> Detalji
-                    </button>
-                  )}
-                  {s.status !== "completed" && (
-                    <button
-                      className="btn btn-sm btn-ghost btn-danger-ghost"
-                      onClick={() => handleDeleteSession(s.id)}
-                    >
-                      <FiTrash2 />
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))
           )}
+          <div className="form-group">
+            <label className="form-label">
+              <FiCalendar size={13} /> Datum
+            </label>
+            <input
+              type="date"
+              value={scheduleDate}
+              onChange={(event) => setScheduleDate(event.target.value)}
+              className="form-control"
+            />
+          </div>
+          <div className="plan-schedule-inline">
+            <button className="btn btn-sm btn-primary" onClick={handleSchedule}>
+              Zakaži
+            </button>
+            <button
+              className="btn btn-sm btn-ghost"
+              onClick={() => {
+                setScheduleId(null);
+                setScheduleUserId("");
+              }}
+            >
+              Otkaži
+            </button>
+          </div>
         </div>
       )}
 
-      {/* SENT SESSIONS TAB (ADMIN) */}
-      {isAdmin && tab === "sent" && (
-        <div className="sessions-list">
-          {sentSessions.length === 0 ? (
-            <div className="empty-state">
-              <FiCalendar size={48} />
-              <h3>Nema poslatih sesija</h3>
-              <p>
-                Ovde će se prikazati sesije koje si poslao/la drugim
-                korisnicima.
-              </p>
-            </div>
-          ) : (
-            sentSessions.map((s) => {
-              const assigneeName =
-                s.assigned_nickname ||
-                [s.assigned_first_name, s.assigned_last_name]
-                  .filter(Boolean)
-                  .join(" ") ||
-                "Korisnik";
-
-              return (
-                <div key={s.id} className="session-card">
-                  <div className="session-card-left">
-                    {getStatusBadge(s.status)}
-                    <div className="session-card-info">
-                      <strong>{s.plan_name}</strong>
-                      <span className="session-card-date">
-                        <FiCalendar size={12} /> {formatDate(s.scheduled_date)}
-                      </span>
-                      <span className="session-card-exercises">
-                        <FiUser size={12} /> {assigneeName} · {s.exercise_count}{" "}
-                        vežbi
-                        {s.status === "in_progress" &&
-                          ` · ${s.completed_exercises || 0}/${s.total_exercises} završeno`}
-                        {s.status === "completed" &&
-                          ` · ${s.completed_exercises || 0}/${s.total_exercises} završeno`}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="session-card-actions">
-                    <button
-                      className="btn btn-sm btn-ghost"
-                      onClick={() => navigate(`/plans/session/${s.id}/detail`)}
-                    >
-                      <FiEye /> Pregled
-                    </button>
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      )}
-
-      {/* Detail modal */}
       <PlanDetailModal
         isOpen={!!detailPlanId}
         onClose={() => setDetailPlanId(null)}
         planId={detailPlanId}
       />
-    </div>
+    </SectionedCollectionShell>
   );
 }
 

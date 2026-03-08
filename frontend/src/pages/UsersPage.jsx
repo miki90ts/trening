@@ -8,6 +8,8 @@ import {
   FiChevronRight,
   FiChevronsLeft,
   FiChevronsRight,
+  FiGrid,
+  FiList,
 } from "react-icons/fi";
 
 function UsersPage() {
@@ -89,14 +91,14 @@ function UsersPage() {
             className={`mode-btn ${viewMode === "card" ? "active" : ""}`}
             onClick={() => setViewMode("card")}
           >
-            Card prikaz
+            <FiGrid />
           </button>
           <button
             type="button"
             className={`mode-btn ${viewMode === "table" ? "active" : ""}`}
             onClick={() => setViewMode("table")}
           >
-            Tabelarni prikaz
+            <FiList />
           </button>
         </div>
       </div>

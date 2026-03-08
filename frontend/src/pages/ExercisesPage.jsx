@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import Modal from "../components/common/Modal";
 import Loading from "../components/common/Loading";
 import { toast } from "react-toastify";
-import { FiPlus } from "react-icons/fi";
+import { FiPlus, FiGrid, FiList } from "react-icons/fi";
 import ExerciseCardsView from "../components/exercises/ExerciseCardsView";
 import CategoriesDataTableView from "../components/exercises/CategoriesDataTableView";
 import CategoryFormModal from "../components/exercises/CategoryFormModal";
@@ -171,14 +171,14 @@ function ExercisesPage() {
               className={`mode-btn ${viewMode === "card" ? "active" : ""}`}
               onClick={() => setViewMode("card")}
             >
-              Card prikaz
+              <FiGrid />
             </button>
             <button
               type="button"
               className={`mode-btn ${viewMode === "table" ? "active" : ""}`}
               onClick={() => setViewMode("table")}
             >
-              Tabelarni prikaz
+              <FiList />
             </button>
           </div>
           {isAdmin && (

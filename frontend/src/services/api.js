@@ -419,7 +419,8 @@ export const sendContactMessage = (data) =>
   api.post("/contact", data).then((r) => r.data);
 
 // ======== WORKOUT PLANS ========
-export const getPlans = () => api.get("/plans").then((r) => r.data);
+export const getPlans = (params = {}) =>
+  api.get("/plans", { params }).then((r) => r.data);
 export const getPlan = (id) => api.get(`/plans/${id}`).then((r) => r.data);
 export const createPlan = (data) =>
   api.post("/plans", data).then((r) => r.data);
@@ -445,7 +446,8 @@ export const deleteSession = (sessionId) =>
   api.delete(`/plans/sessions/${sessionId}`).then((r) => r.data);
 
 // ======== MEAL PLANS ========
-export const getMealPlans = () => api.get("/meal-plans").then((r) => r.data);
+export const getMealPlans = (params = {}) =>
+  api.get("/meal-plans", { params }).then((r) => r.data);
 export const getMealPlan = (id) =>
   api.get(`/meal-plans/${id}`).then((r) => r.data);
 export const createMealPlan = (data) =>

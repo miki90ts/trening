@@ -6,7 +6,7 @@ const {
 
 async function getMealPlans(req, res, next) {
   try {
-    const plans = await mealPlansService.getMealPlans(req.user.id);
+    const plans = await mealPlansService.getMealPlans(req.user.id, req.query);
     res.json(plans);
   } catch (err) {
     handleError(err, next, res);
@@ -91,7 +91,7 @@ async function scheduleMealPlan(req, res, next) {
 async function getMealSessionsList(req, res, next) {
   try {
     const sessions = await mealPlansService.getMealSessionsList(
-      req.user.id,
+      req.user,
       req.query,
     );
     res.json(sessions);

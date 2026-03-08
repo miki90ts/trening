@@ -50,13 +50,12 @@ function Navbar() {
   const links = [
     { to: "/", label: "Početna", icon: <FiHome /> },
     { to: "/users", label: "Učesnici", icon: <FiUsers /> },
-    { to: "/exercises", label: "Vežbe", icon: <FiActivity /> },
     { to: "/results", label: "Rezultati", icon: <FiAward /> },
     { to: "/calendar", label: "Kalendar", icon: <FiCalendar /> },
     { to: "/leaderboard", label: "Rang lista", icon: <FiBarChart2 /> },
     { to: "/analytics", label: "Analitika", icon: <FiTrendingUp /> },
-    { to: "/activity", label: "Activity", icon: <FiActivity /> },
-    { to: "/plans", label: "Plan vežbanja", icon: <FiClipboard /> },
+    { to: "/activity", label: "Aktivnost", icon: <FiActivity /> },
+    { to: "/plans", label: "Plan treninga", icon: <FiClipboard /> },
     { to: "/meal-plans", label: "Plan ishrane", icon: <FiBookOpen /> },
   ];
 
@@ -74,14 +73,15 @@ function Navbar() {
 
   const adminLinks = [
     { to: "/admin/users", label: "Korisnici", icon: <FiUsers /> },
+    { to: "/admin/exercises", label: "Vežbe", icon: <FiActivity /> },
     {
       to: "/admin/food-catalog",
-      label: "Food Catalog",
+      label: "Katalog hrane",
       icon: <FiBookOpen />,
     },
     {
       to: "/admin/activity-types",
-      label: "Activity Types",
+      label: "Tipovi aktivnosti",
       icon: <FiActivity />,
     },
   ];

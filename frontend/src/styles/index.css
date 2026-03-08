@@ -4999,6 +4999,87 @@ a {
   border-bottom-color: var(--accent-primary);
 }
 
+.plans-page-shell .page-header {
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.plans-page-subtitle {
+  margin: 0.35rem 0 0;
+  color: var(--text-secondary);
+  max-width: 720px;
+}
+
+.plans-route-tabs {
+  margin-bottom: 1rem;
+}
+
+.plans-filters-card {
+  margin-bottom: 1rem;
+}
+
+.plans-filters-top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.plans-search-group {
+  flex: 1;
+  min-width: 280px;
+}
+
+.plans-search-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0 0.85rem;
+  background: var(--bg-secondary);
+}
+
+.plans-search-input-wrap svg {
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.plans-search-input-wrap input {
+  border: none;
+  background: transparent;
+  width: 100%;
+  padding: 0.8rem 0;
+  color: var(--text-primary);
+}
+
+.plans-search-input-wrap input:focus {
+  outline: none;
+}
+
+.plans-view-actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.plans-page-size-group {
+  min-width: 120px;
+}
+
+.plans-filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.85rem;
+  margin-top: 0.85rem;
+}
+
+.plans-filter-actions {
+  margin-top: 1rem;
+}
+
 /* Plan Cards Grid */
 .plans-grid {
   display: grid;
@@ -5047,6 +5128,14 @@ a {
   font-size: 0.8rem;
   color: var(--text-secondary);
 }
+
+.plan-card-meta-grid {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 .plan-card-actions {
   display: flex;
   gap: 0.3rem;
@@ -5153,6 +5242,60 @@ a {
   display: flex;
   gap: 0.4rem;
   flex-shrink: 0;
+}
+
+.session-card-actions .btn {
+  white-space: nowrap;
+}
+
+.plans-table-wrapper {
+  overflow-x: auto;
+}
+
+.plans-table-name-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.plans-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.plans-card-summary {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.plans-load-more-sentinel {
+  height: 1px;
+}
+
+.plans-inline-scheduler {
+  margin-top: 1rem;
+}
+
+.plans-inline-scheduler-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.plans-inline-scheduler-header h3 {
+  margin: 0;
+}
+
+.plans-inline-scheduler-header span {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
 }
 
 /* Status badges */
@@ -6096,9 +6239,47 @@ a {
 
 /* Responsive */
 @media (max-width: 768px) {
+  .plans-filters-top {
+    align-items: stretch;
+  }
+
+  .plans-view-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .plans-page-size-group {
+    width: 100%;
+  }
+
+  .plans-page-size-group select {
+    width: 100%;
+  }
+
   .plans-grid {
     grid-template-columns: 1fr;
   }
+
+  .plans-card-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .plans-inline-scheduler-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .session-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .session-card-actions {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
   .session-exec-header {
     flex-direction: column;
     align-items: flex-start;
