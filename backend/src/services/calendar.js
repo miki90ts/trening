@@ -14,9 +14,9 @@ function ensureDayBucket(byDate, dateKey) {
     byDate[dateKey] = {
       workouts: [],
       activities: [],
-      scheduled: [],
       sessions: [],
       mealSessions: [],
+      activitySessions: [],
     };
   }
 }
@@ -43,20 +43,6 @@ async function getCalendarMonth(user, query) {
       WHERE w.user_id = ? AND DATE_FORMAT(w.attempt_date, '%Y-%m') = ?
       GROUP BY w.id
       ORDER BY w.attempt_date ASC
-    `,
-    [userId, month],
-  );
-
-  const [scheduled] = await pool.query(
-    `
-      SELECT sw.*,
-             c.name AS category_name, c.value_type, c.has_weight, c.color AS category_color,
-             e.name AS exercise_name, e.icon AS exercise_icon
-      FROM scheduled_workouts sw
-      JOIN categories c ON sw.category_id = c.id
-      JOIN exercises e ON c.exercise_id = e.id
-      WHERE sw.user_id = ? AND DATE_FORMAT(sw.scheduled_date, '%Y-%m') = ?
-      ORDER BY sw.scheduled_date ASC, sw.scheduled_time ASC
     `,
     [userId, month],
   );
@@ -106,6 +92,22 @@ async function getCalendarMonth(user, query) {
     [userId, month],
   );
 
+  const [activitySessions] = await pool.query(
+    `
+      SELECT s.id, s.plan_id, s.plan_name, s.scheduled_date, s.status,
+             s.started_at, s.completed_at, s.activity_id,
+             COUNT(DISTINCT ss.id) AS segment_count,
+             at.name AS activity_type_name
+      FROM activity_sessions s
+      JOIN activity_types at ON at.id = s.activity_type_id
+      LEFT JOIN activity_session_segments ss ON ss.session_id = s.id
+      WHERE s.user_id = ? AND DATE_FORMAT(s.scheduled_date, '%Y-%m') = ?
+      GROUP BY s.id
+      ORDER BY s.scheduled_date ASC
+    `,
+    [userId, month],
+  );
+
   const byDate = {};
 
   for (const workout of workouts) {
@@ -120,12 +122,6 @@ async function getCalendarMonth(user, query) {
     byDate[dateKey].activities.push(activity);
   }
 
-  for (const scheduleItem of scheduled) {
-    const dateKey = toYmd(scheduleItem.scheduled_date);
-    ensureDayBucket(byDate, dateKey);
-    byDate[dateKey].scheduled.push(scheduleItem);
-  }
-
   for (const planSession of planSessions) {
     const dateKey = toYmd(planSession.scheduled_date);
     ensureDayBucket(byDate, dateKey);
@@ -136,6 +132,12 @@ async function getCalendarMonth(user, query) {
     const dateKey = toYmd(mealSession.scheduled_date);
     ensureDayBucket(byDate, dateKey);
     byDate[dateKey].mealSessions.push(mealSession);
+  }
+
+  for (const activitySession of activitySessions) {
+    const dateKey = toYmd(activitySession.scheduled_date);
+    ensureDayBucket(byDate, dateKey);
+    byDate[dateKey].activitySessions.push(activitySession);
   }
 
   return byDate;

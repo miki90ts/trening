@@ -559,6 +559,17 @@ function MealPlanBuilderPage() {
 
                         return (
                           <div key={itemIdx} className="meal-item-row">
+                            <div className="meal-item-row-actions">
+                              <button
+                                type="button"
+                                className="btn-icon btn-danger"
+                                onClick={() => removeItem(mealIdx, itemIdx)}
+                                title="Ukloni stavku"
+                              >
+                                <FiTrash2 size={14} />
+                              </button>
+                            </div>
+
                             {/* Food selection */}
                             <div className="meal-item-food-select">
                               {item.food_item_id ? (
@@ -641,17 +652,6 @@ function MealPlanBuilderPage() {
                                   </div>
                                 </div>
                               )}
-                            </div>
-
-                            <div className="meal-item-row-actions">
-                              <button
-                                type="button"
-                                className="btn-icon btn-danger"
-                                onClick={() => removeItem(mealIdx, itemIdx)}
-                                title="Ukloni stavku"
-                              >
-                                <FiTrash2 size={14} />
-                              </button>
                             </div>
 
                             {/* Amount and macros */}

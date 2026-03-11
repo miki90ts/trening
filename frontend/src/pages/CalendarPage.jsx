@@ -18,10 +18,6 @@ function CalendarPage() {
     goToNextMonth,
     goToToday,
     selectDate,
-    addScheduledWorkout,
-    editScheduledWorkout,
-    removeScheduledWorkout,
-    markComplete,
   } = useCalendar();
 
   const { refreshNotifications } = useNotifications();
@@ -29,46 +25,6 @@ function CalendarPage() {
   useEffect(() => {
     loadMonth(currentMonth);
   }, []);
-
-  const handleAddScheduled = async (data) => {
-    try {
-      await addScheduledWorkout(data);
-      toast.success("Trening zakazan!");
-      refreshNotifications();
-    } catch (err) {
-      toast.error("Greška: " + (err.response?.data?.error || err.message));
-    }
-  };
-
-  const handleEditScheduled = async (id, data) => {
-    try {
-      await editScheduledWorkout(id, data);
-      toast.success("Zakazani trening ažuriran!");
-      refreshNotifications();
-    } catch (err) {
-      toast.error("Greška: " + (err.response?.data?.error || err.message));
-    }
-  };
-
-  const handleDeleteScheduled = async (id) => {
-    try {
-      await removeScheduledWorkout(id);
-      toast.success("Zakazani trening obrisan!");
-      refreshNotifications();
-    } catch (err) {
-      toast.error("Greška: " + (err.response?.data?.error || err.message));
-    }
-  };
-
-  const handleCompleteScheduled = async (id) => {
-    try {
-      await markComplete(id);
-      toast.success("Trening označen kao završen! 💪");
-      refreshNotifications();
-    } catch (err) {
-      toast.error("Greška: " + (err.response?.data?.error || err.message));
-    }
-  };
 
   if (loading) return <Loading />;
 
@@ -98,16 +54,10 @@ function CalendarPage() {
           <CalendarDayDetail
             selectedDate={selectedDate}
             calendarData={calendarData}
-            onAddScheduled={handleAddScheduled}
-            onEditScheduled={handleEditScheduled}
-            onDeleteScheduled={handleDeleteScheduled}
-            onCompleteScheduled={handleCompleteScheduled}
           />
           {!selectedDate && (
             <div className="calendar-sidebar-empty">
-              <p>
-                👈 Izaberi dan u kalendaru da vidiš detalje ili zakažeš trening
-              </p>
+              <p>👈 Izaberi dan u kalendaru da vidiš detalje</p>
             </div>
           )}
         </div>

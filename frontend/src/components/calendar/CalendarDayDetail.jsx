@@ -1,9 +1,12 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiPlus, FiClock, FiClipboard, FiPlay, FiCheckCircle } from "react-icons/fi";
-import ScheduleItem from "./ScheduleItem";
-import ScheduleForm from "./ScheduleForm";
-import ScheduledWorkoutEditModal from "./ScheduledWorkoutEditModal";
+import {
+  FiPlus,
+  FiClock,
+  FiClipboard,
+  FiPlay,
+  FiCheckCircle,
+} from "react-icons/fi";
 import {
   formatDistanceKm,
   formatDuration,
@@ -34,45 +37,21 @@ const MONTH_NAMES = [
   "decembar",
 ];
 
-function CalendarDayDetail({
-  selectedDate,
-  calendarData,
-  onAddScheduled,
-  onEditScheduled,
-  onDeleteScheduled,
-  onCompleteScheduled,
-  onClose,
-}) {
+function CalendarDayDetail({ selectedDate, calendarData }) {
   const navigate = useNavigate();
-  const [showForm, setShowForm] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
 
   if (!selectedDate) return null;
 
   const dayData = calendarData[selectedDate] || {
     workouts: [],
     activities: [],
-    scheduled: [],
     sessions: [],
+    mealSessions: [],
+    activitySessions: [],
   };
   const dateObj = new Date(selectedDate + "T00:00:00");
   const dayName = DAY_NAMES[dateObj.getDay()];
   const formattedDate = `${dateObj.getDate()}. ${MONTH_NAMES[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
-
-  const handleAddSubmit = async (data) => {
-    await onAddScheduled(data);
-    setShowForm(false);
-  };
-
-  const handleEditSubmit = async (id, data) => {
-    await onEditScheduled(id, data);
-    setEditingItem(null);
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm("Obrisati zakazani trening?")) return;
-    await onDeleteScheduled(id);
-  };
 
   return (
     <div className="calendar-day-detail">
@@ -81,43 +60,7 @@ function CalendarDayDetail({
           <h3>{dayName}</h3>
           <p className="calendar-day-detail-date">{formattedDate}</p>
         </div>
-        <button
-          className="btn btn-primary btn-sm"
-          onClick={() => setShowForm(!showForm)}
-        >
-          <FiPlus /> Zakaži
-        </button>
       </div>
-
-      {showForm && (
-        <div className="calendar-day-detail-form">
-          <ScheduleForm
-            selectedDate={selectedDate}
-            onSubmit={handleAddSubmit}
-            onCancel={() => setShowForm(false)}
-          />
-        </div>
-      )}
-
-      {/* Zakazani treninzi */}
-      {dayData.scheduled.length > 0 && (
-        <div className="calendar-day-section">
-          <h4 className="calendar-day-section-title">
-            <FiClock /> Zakazano ({dayData.scheduled.length})
-          </h4>
-          <div className="calendar-day-items">
-            {dayData.scheduled.map((item) => (
-              <ScheduleItem
-                key={item.id}
-                item={item}
-                onComplete={onCompleteScheduled}
-                onEdit={(item) => setEditingItem(item)}
-                onDelete={handleDelete}
-              />
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Urađeni treninzi */}
       {dayData.workouts.length > 0 && (
@@ -215,16 +158,20 @@ function CalendarDayDetail({
                 role="button"
                 tabIndex={0}
                 onClick={() => {
-                  if (ps.status === 'completed') navigate(`/plans/session/${ps.id}/detail`);
-                  else if (ps.status === 'in_progress') navigate(`/plans/session/${ps.id}`);
-                  else navigate('/plans');
+                  if (ps.status === "completed")
+                    navigate(`/plans/session/${ps.id}/detail`);
+                  else if (ps.status === "in_progress")
+                    navigate(`/plans/session/${ps.id}`);
+                  else navigate("/plans");
                 }}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
-                    if (ps.status === 'completed') navigate(`/plans/session/${ps.id}/detail`);
-                    else if (ps.status === 'in_progress') navigate(`/plans/session/${ps.id}`);
-                    else navigate('/plans');
+                    if (ps.status === "completed")
+                      navigate(`/plans/session/${ps.id}/detail`);
+                    else if (ps.status === "in_progress")
+                      navigate(`/plans/session/${ps.id}`);
+                    else navigate("/plans");
                   }
                 }}
                 title={ps.plan_name}
@@ -236,14 +183,34 @@ function CalendarDayDetail({
                 <div className="calendar-workout-info">
                   <span className="schedule-item-icon">📋</span>
                   <div>
-                    <span className="schedule-item-exercise">{ps.plan_name}</span>
-                    <span className="schedule-item-category">{ps.exercise_count} vežbi</span>
+                    <span className="schedule-item-exercise">
+                      {ps.plan_name}
+                    </span>
+                    <span className="schedule-item-category">
+                      {ps.exercise_count} vežbi
+                    </span>
                   </div>
                 </div>
                 <div className="calendar-workout-score">
-                  {ps.status === 'completed' && <><FiCheckCircle style={{ color: 'var(--accent-success)' }} /> <span>Završeno</span></>}
-                  {ps.status === 'in_progress' && <><FiPlay style={{ color: 'var(--accent-warning)' }} /> <span>U toku</span></>}
-                  {ps.status === 'scheduled' && <><FiClock /> <span>Zakazano</span></>}
+                  {ps.status === "completed" && (
+                    <>
+                      <FiCheckCircle
+                        style={{ color: "var(--accent-success)" }}
+                      />{" "}
+                      <span>Završeno</span>
+                    </>
+                  )}
+                  {ps.status === "in_progress" && (
+                    <>
+                      <FiPlay style={{ color: "var(--accent-warning)" }} />{" "}
+                      <span>U toku</span>
+                    </>
+                  )}
+                  {ps.status === "scheduled" && (
+                    <>
+                      <FiClock /> <span>Zakazano</span>
+                    </>
+                  )}
                 </div>
               </div>
             ))}
@@ -265,16 +232,20 @@ function CalendarDayDetail({
                 role="button"
                 tabIndex={0}
                 onClick={() => {
-                  if (ms.status === 'completed') navigate(`/meal-plans/session/${ms.id}/detail`);
-                  else if (ms.status === 'in_progress') navigate(`/meal-plans/session/${ms.id}`);
-                  else navigate('/meal-plans');
+                  if (ms.status === "completed")
+                    navigate(`/meal-plans/session/${ms.id}/detail`);
+                  else if (ms.status === "in_progress")
+                    navigate(`/meal-plans/session/${ms.id}`);
+                  else navigate("/meal-plans");
                 }}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
-                    if (ms.status === 'completed') navigate(`/meal-plans/session/${ms.id}/detail`);
-                    else if (ms.status === 'in_progress') navigate(`/meal-plans/session/${ms.id}`);
-                    else navigate('/meal-plans');
+                    if (ms.status === "completed")
+                      navigate(`/meal-plans/session/${ms.id}/detail`);
+                    else if (ms.status === "in_progress")
+                      navigate(`/meal-plans/session/${ms.id}`);
+                    else navigate("/meal-plans");
                   }
                 }}
                 title={ms.plan_name}
@@ -286,14 +257,108 @@ function CalendarDayDetail({
                 <div className="calendar-workout-info">
                   <span className="schedule-item-icon">🍽️</span>
                   <div>
-                    <span className="schedule-item-exercise">{ms.plan_name}</span>
-                    <span className="schedule-item-category">{ms.meal_count} obroka</span>
+                    <span className="schedule-item-exercise">
+                      {ms.plan_name}
+                    </span>
+                    <span className="schedule-item-category">
+                      {ms.meal_count} obroka
+                    </span>
                   </div>
                 </div>
                 <div className="calendar-workout-score">
-                  {ms.status === 'completed' && <><FiCheckCircle style={{ color: 'var(--accent-success)' }} /> <span>Završeno</span></>}
-                  {ms.status === 'in_progress' && <><FiPlay style={{ color: 'var(--accent-warning)' }} /> <span>U toku</span></>}
-                  {ms.status === 'scheduled' && <><FiClock /> <span>Zakazano</span></>}
+                  {ms.status === "completed" && (
+                    <>
+                      <FiCheckCircle
+                        style={{ color: "var(--accent-success)" }}
+                      />{" "}
+                      <span>Završeno</span>
+                    </>
+                  )}
+                  {ms.status === "in_progress" && (
+                    <>
+                      <FiPlay style={{ color: "var(--accent-warning)" }} />{" "}
+                      <span>U toku</span>
+                    </>
+                  )}
+                  {ms.status === "scheduled" && (
+                    <>
+                      <FiClock /> <span>Zakazano</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Activity plan sesije */}
+      {dayData.activitySessions && dayData.activitySessions.length > 0 && (
+        <div className="calendar-day-section">
+          <h4 className="calendar-day-section-title">
+            🏃 Plan aktivnosti ({dayData.activitySessions.length})
+          </h4>
+          <div className="calendar-day-items">
+            {dayData.activitySessions.map((as) => (
+              <div
+                key={as.id}
+                className="calendar-workout-item calendar-workout-item--clickable"
+                role="button"
+                tabIndex={0}
+                onClick={() => {
+                  if (as.status === "completed" && as.activity_id) {
+                    navigate(`/activity/${as.activity_id}`);
+                  } else {
+                    navigate(`/activity-plans/session/${as.id}`);
+                  }
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    if (as.status === "completed" && as.activity_id) {
+                      navigate(`/activity/${as.activity_id}`);
+                    } else {
+                      navigate(`/activity-plans/session/${as.id}`);
+                    }
+                  }
+                }}
+                title={as.plan_name}
+              >
+                <div
+                  className="schedule-item-color"
+                  style={{ backgroundColor: "#3b82f6" }}
+                />
+                <div className="calendar-workout-info">
+                  <span className="schedule-item-icon">🏃</span>
+                  <div>
+                    <span className="schedule-item-exercise">
+                      {as.plan_name}
+                    </span>
+                    <span className="schedule-item-category">
+                      {as.activity_type_name} · {as.segment_count} segmenata
+                    </span>
+                  </div>
+                </div>
+                <div className="calendar-workout-score">
+                  {as.status === "completed" && (
+                    <>
+                      <FiCheckCircle
+                        style={{ color: "var(--accent-success)" }}
+                      />{" "}
+                      <span>Završeno</span>
+                    </>
+                  )}
+                  {as.status === "in_progress" && (
+                    <>
+                      <FiPlay style={{ color: "var(--accent-warning)" }} />{" "}
+                      <span>U toku</span>
+                    </>
+                  )}
+                  {as.status === "scheduled" && (
+                    <>
+                      <FiClock /> <span>Zakazano</span>
+                    </>
+                  )}
                 </div>
               </div>
             ))}
@@ -303,20 +368,12 @@ function CalendarDayDetail({
 
       {dayData.workouts.length === 0 &&
         dayData.activities.length === 0 &&
-        dayData.scheduled.length === 0 &&
         (!dayData.sessions || dayData.sessions.length === 0) &&
         (!dayData.mealSessions || dayData.mealSessions.length === 0) &&
-        !showForm && (
+        (!dayData.activitySessions ||
+          dayData.activitySessions.length === 0) && (
           <p className="empty-state">Nema aktivnosti za ovaj dan.</p>
         )}
-
-      {/* Edit modal */}
-      <ScheduledWorkoutEditModal
-        isOpen={!!editingItem}
-        onClose={() => setEditingItem(null)}
-        item={editingItem}
-        onSubmit={handleEditSubmit}
-      />
     </div>
   );
 }

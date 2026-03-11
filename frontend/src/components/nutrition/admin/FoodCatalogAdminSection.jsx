@@ -265,15 +265,17 @@ function FoodCatalogAdminSection() {
                     <button
                       className="btn btn-sm btn-secondary"
                       onClick={() => openEdit(food)}
+                      title="Izmeni"
                     >
-                      <FiEdit2 /> Izmeni
+                      <FiEdit2 />
                     </button>
                     {food.is_active ? (
                       <button
                         className="btn btn-sm btn-danger"
                         onClick={() => handleDeactivate(food)}
+                        title="Deaktiviraj"
                       >
-                        <FiTrash2 /> Deaktiviraj
+                        <FiTrash2 />
                       </button>
                     ) : null}
                   </div>

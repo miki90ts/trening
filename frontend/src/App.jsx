@@ -37,6 +37,9 @@ import MealPlansPage from "./pages/MealPlansPage";
 import MealPlanBuilderPage from "./pages/MealPlanBuilderPage";
 import MealSessionExecutionPage from "./pages/MealSessionExecutionPage";
 import MealSessionDetailPage from "./pages/MealSessionDetailPage";
+import ActivityPlansPage from "./pages/ActivityPlansPage";
+import ActivityPlanBuilderPage from "./pages/ActivityPlanBuilderPage";
+import ActivityPlanSessionPage from "./pages/ActivityPlanSessionPage";
 
 function App() {
   const { isAuthenticated } = useAuth();
@@ -218,6 +221,39 @@ function App() {
             element={
               <ProtectedRoute>
                 <ActivityDetailPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/activity-plans"
+            element={
+              <ProtectedRoute>
+                <ActivityPlansPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/activity-plans/new"
+            element={
+              <ProtectedRoute>
+                <ActivityPlanBuilderPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/activity-plans/:id/edit"
+            element={
+              <ProtectedRoute>
+                <ActivityPlanBuilderPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/activity-plans/session/:sessionId"
+            element={
+              <ProtectedRoute>
+                <ActivityPlanSessionPage />
               </ProtectedRoute>
             }
           />

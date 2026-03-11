@@ -3,7 +3,6 @@ import { toast } from "react-toastify";
 import * as api from "../../services/api";
 
 const CATEGORY_INFO = {
-  workout_schedule: { label: "Zakazani treninzi", icon: "📅", hasEmail: false },
   workout_plan: { label: "Plan treninga", icon: "🏋️", hasEmail: true },
   meal_plan: { label: "Plan ishrane", icon: "🍽️", hasEmail: true },
   nutrition: { label: "Ishrana", icon: "🥗", hasEmail: false },

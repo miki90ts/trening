@@ -28,50 +28,6 @@ function reducer(state, action) {
       return { ...state, calendarData: action.payload, loading: false };
     case "SET_SELECTED_DATE":
       return { ...state, selectedDate: action.payload };
-    case "ADD_SCHEDULED": {
-      const dateKey =
-        action.payload.scheduled_date?.slice(0, 10) ||
-        new Date(action.payload.scheduled_date).toISOString().slice(0, 10);
-      const existing = state.calendarData[dateKey] || {
-        workouts: [],
-        activities: [],
-        scheduled: [],
-      };
-      return {
-        ...state,
-        calendarData: {
-          ...state.calendarData,
-          [dateKey]: {
-            ...existing,
-            scheduled: [...existing.scheduled, action.payload],
-          },
-        },
-      };
-    }
-    case "UPDATE_SCHEDULED": {
-      const data = { ...state.calendarData };
-      for (const dateKey of Object.keys(data)) {
-        data[dateKey] = {
-          ...data[dateKey],
-          scheduled: data[dateKey].scheduled.map((s) =>
-            s.id === action.payload.id ? action.payload : s,
-          ),
-        };
-      }
-      return { ...state, calendarData: data };
-    }
-    case "REMOVE_SCHEDULED": {
-      const data = { ...state.calendarData };
-      for (const dateKey of Object.keys(data)) {
-        data[dateKey] = {
-          ...data[dateKey],
-          scheduled: data[dateKey].scheduled.filter(
-            (s) => s.id !== action.payload,
-          ),
-        };
-      }
-      return { ...state, calendarData: data };
-    }
     default:
       return state;
   }
@@ -118,33 +74,6 @@ export function CalendarProvider({ children }) {
     dispatch({ type: "SET_SELECTED_DATE", payload: date });
   }, []);
 
-  const addScheduledWorkout = useCallback(async (data) => {
-    const result = await api.createScheduledWorkout(data);
-    dispatch({ type: "ADD_SCHEDULED", payload: result });
-    return result;
-  }, []);
-
-  const editScheduledWorkout = useCallback(
-    async (id, data) => {
-      const result = await api.updateScheduledWorkout(id, data);
-      // Ako se datum promenio, reload ceo mesec
-      await loadMonth(state.currentMonth);
-      return result;
-    },
-    [state.currentMonth, loadMonth],
-  );
-
-  const removeScheduledWorkout = useCallback(async (id) => {
-    await api.deleteScheduledWorkout(id);
-    dispatch({ type: "REMOVE_SCHEDULED", payload: id });
-  }, []);
-
-  const markComplete = useCallback(async (id) => {
-    const result = await api.completeScheduledWorkout(id);
-    dispatch({ type: "UPDATE_SCHEDULED", payload: result });
-    return result;
-  }, []);
-
   const value = {
     ...state,
     loadMonth,
@@ -152,10 +81,6 @@ export function CalendarProvider({ children }) {
     goToNextMonth,
     goToToday,
     selectDate,
-    addScheduledWorkout,
-    editScheduledWorkout,
-    removeScheduledWorkout,
-    markComplete,
   };
 
   return (

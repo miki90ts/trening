@@ -38,6 +38,8 @@ function CalendarGrid({
       activities: [],
       scheduled: [],
       sessions: [],
+      mealSessions: [],
+      activitySessions: [],
     };
     cells.push({ day, dateStr, ...dayData, key: dateStr });
   }
@@ -71,8 +73,17 @@ function CalendarGrid({
           const hasActivities = cell.activities && cell.activities.length > 0;
           const hasScheduled = cell.scheduled && cell.scheduled.length > 0;
           const hasSessions = cell.sessions && cell.sessions.length > 0;
-          const hasMealSessions = cell.mealSessions && cell.mealSessions.length > 0;
-          const hasEvents = hasWorkouts || hasActivities || hasScheduled || hasSessions || hasMealSessions;
+          const hasMealSessions =
+            cell.mealSessions && cell.mealSessions.length > 0;
+          const hasActivitySessions =
+            cell.activitySessions && cell.activitySessions.length > 0;
+          const hasEvents =
+            hasWorkouts ||
+            hasActivities ||
+            hasScheduled ||
+            hasSessions ||
+            hasMealSessions ||
+            hasActivitySessions;
 
           return (
             <div
@@ -122,8 +133,10 @@ function CalendarGrid({
                       <WorkoutDot
                         key={`ps-${ps.id || i}`}
                         color="var(--accent-primary)"
-                        title={`📋 ${ps.plan_name} (${ps.status === 'completed' ? 'završeno' : ps.status === 'in_progress' ? 'u toku' : 'zakazano'})`}
-                        type={ps.status === 'completed' ? 'workout' : 'scheduled'}
+                        title={`📋 ${ps.plan_name} (${ps.status === "completed" ? "završeno" : ps.status === "in_progress" ? "u toku" : "zakazano"})`}
+                        type={
+                          ps.status === "completed" ? "workout" : "scheduled"
+                        }
                       />
                     ))}
                 {hasMealSessions &&
@@ -133,13 +146,33 @@ function CalendarGrid({
                       <WorkoutDot
                         key={`ms-${ms.id || i}`}
                         color="var(--accent-warning)"
-                        title={`🍽️ ${ms.plan_name} (${ms.status === 'completed' ? 'završeno' : ms.status === 'in_progress' ? 'u toku' : 'zakazano'})`}
-                        type={ms.status === 'completed' ? 'workout' : 'scheduled'}
+                        title={`🍽️ ${ms.plan_name} (${ms.status === "completed" ? "završeno" : ms.status === "in_progress" ? "u toku" : "zakazano"})`}
+                        type={
+                          ms.status === "completed" ? "workout" : "scheduled"
+                        }
+                      />
+                    ))}
+                {hasActivitySessions &&
+                  cell.activitySessions
+                    .slice(0, 2)
+                    .map((activitySession, i) => (
+                      <WorkoutDot
+                        key={`aps-${activitySession.id || i}`}
+                        color="#3b82f6"
+                        title={`🏃 ${activitySession.plan_name} (${activitySession.status === "completed" ? "završeno" : activitySession.status === "in_progress" ? "u toku" : "zakazano"})`}
+                        type={
+                          activitySession.status === "completed"
+                            ? "workout"
+                            : "scheduled"
+                        }
                       />
                     ))}
                 {(cell.workouts?.length > 3 ||
                   cell.activities?.length > 3 ||
-                  cell.scheduled?.length > 3) && (
+                  cell.scheduled?.length > 3 ||
+                  cell.sessions?.length > 3 ||
+                  cell.mealSessions?.length > 2 ||
+                  cell.activitySessions?.length > 2) && (
                   <span className="calendar-cell-more">+</span>
                 )}
               </div>

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import Card from "../components/common/Card";
 import { useActivity } from "../context/ActivityContext";
+import { FiEdit2, FiTrash2, FiCheckCircle, FiXCircle } from "react-icons/fi";
 
 const initialForm = {
   name: "",
@@ -151,7 +152,7 @@ function AdminActivityTypesPage() {
         </form>
       </Card>
 
-      <Card>
+      <Card className="mt-3">
         <h3>Svi tipovi aktivnosti</h3>
         {loadingTypes ? (
           <p className="empty-state-small">Učitavanje...</p>
@@ -182,27 +183,29 @@ function AdminActivityTypesPage() {
                       <div className="section-header-buttons">
                         <button
                           type="button"
-                          className="btn btn-outline"
+                          className="btn btn-sm btn-secondary"
                           onClick={() => handleEdit(row)}
+                          title="Izmeni"
                         >
-                          Izmeni
+                          <FiEdit2 />
                         </button>
                         <button
                           type="button"
-                          className="btn btn-secondary"
+                          className={`btn btn-sm ${row.is_active ? "btn-warning" : "btn-success"}`}
                           onClick={() => handleToggleActive(row)}
+                          title={row.is_active ? "Deaktiviraj" : "Aktiviraj"}
                         >
-                          {row.is_active ? "Deaktiviraj" : "Aktiviraj"}
+                          {row.is_active ? <FiXCircle /> : <FiCheckCircle />}
                         </button>
-                        {row.is_active && (
-                          <button
-                            type="button"
-                            className="btn btn-danger"
-                            onClick={() => handleDelete(row)}
-                          >
-                            Obriši
-                          </button>
-                        )}
+
+                        <button
+                          type="button"
+                          className="btn btn-danger"
+                          onClick={() => handleDelete(row)}
+                          title="Obriši"
+                        >
+                          <FiTrash2 />
+                        </button>
                       </div>
                     </td>
                   </tr>

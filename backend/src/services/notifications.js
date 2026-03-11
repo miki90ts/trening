@@ -3,12 +3,6 @@ const { httpError } = require("../helpers/httpError");
 
 // ======== Sve kategorije sa meta-podacima ========
 const CATEGORY_META = {
-  workout_schedule: {
-    label: "Zakazani treninzi",
-    icon: "📅",
-    color: "#6366f1",
-    link: "/calendar",
-  },
   workout_plan: {
     label: "Plan treninga",
     icon: "🏋️",
@@ -230,28 +224,7 @@ async function getDailyTasks(userId) {
 
   const tasks = [];
 
-  // 1. Scheduled workouts
-  if (isDashboardEnabled("workout_schedule")) {
-    const [[{ total, completed_count }]] = await pool.query(
-      `SELECT COUNT(*) AS total,
-              SUM(is_completed = 1) AS completed_count
-       FROM scheduled_workouts
-       WHERE user_id = ? AND scheduled_date = CURDATE()`,
-      [userId],
-    );
-    if (total > 0) {
-      tasks.push({
-        category: "workout_schedule",
-        label: "Zakazani treninzi",
-        icon: "📅",
-        done: completed_count >= total,
-        detail: `${completed_count}/${total} završeno`,
-        link: "/calendar",
-      });
-    }
-  }
-
-  // 2. Workout plan sessions
+  // 1. Workout plan sessions
   if (isDashboardEnabled("workout_plan")) {
     const [sessions] = await pool.query(
       `SELECT id, plan_name, status FROM workout_sessions
@@ -275,7 +248,7 @@ async function getDailyTasks(userId) {
     }
   }
 
-  // 3. Meal plan sessions
+  // 2. Meal plan sessions
   if (isDashboardEnabled("meal_plan")) {
     const [mealSessions] = await pool.query(
       `SELECT id, plan_name, status FROM meal_sessions
@@ -299,7 +272,7 @@ async function getDailyTasks(userId) {
     }
   }
 
-  // 4. Nutrition
+  // 3. Nutrition
   if (isDashboardEnabled("nutrition")) {
     const [[{ cnt }]] = await pool.query(
       `SELECT COUNT(*) AS cnt FROM food_entries
@@ -316,7 +289,7 @@ async function getDailyTasks(userId) {
     });
   }
 
-  // 5. Hydration
+  // 4. Hydration
   if (isDashboardEnabled("hydration")) {
     const [[{ total_ml }]] = await pool.query(
       `SELECT COALESCE(SUM(amount_ml), 0) AS total_ml FROM hydration_entries
@@ -342,7 +315,7 @@ async function getDailyTasks(userId) {
     });
   }
 
-  // 6. Sleep
+  // 5. Sleep
   if (isDashboardEnabled("sleep")) {
     const [[{ cnt }]] = await pool.query(
       `SELECT COUNT(*) AS cnt FROM sleep_entries
@@ -359,7 +332,7 @@ async function getDailyTasks(userId) {
     });
   }
 
-  // 7. Steps
+  // 6. Steps
   if (isDashboardEnabled("steps")) {
     const [[stepRow]] = await pool.query(
       `SELECT step_count, goal FROM step_metrics
@@ -380,7 +353,7 @@ async function getDailyTasks(userId) {
     });
   }
 
-  // 8. Weight (kilaža) — prikazuj samo ako nema unosa danas
+  // 7. Weight (kilaža) — prikazuj samo ako nema unosa danas
   if (isDashboardEnabled("weight")) {
     const [[{ cnt }]] = await pool.query(
       `SELECT COUNT(*) AS cnt FROM weight_metrics
@@ -397,7 +370,7 @@ async function getDailyTasks(userId) {
     });
   }
 
-  // 9. Activities
+  // 8. Activities
   if (isDashboardEnabled("activity")) {
     const [[{ cnt }]] = await pool.query(
       `SELECT COUNT(*) AS cnt FROM activities

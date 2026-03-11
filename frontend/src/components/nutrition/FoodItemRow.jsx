@@ -1,8 +1,15 @@
-import React, { useMemo, useState } from "react";
-import { FiTrash2 } from "react-icons/fi";
+import React, { useEffect, useMemo, useState } from "react";
+import { FiSearch, FiTrash2 } from "react-icons/fi";
 
 function FoodItemRow({ item, foods, onChange, onRemove }) {
   const [catalogQuery, setCatalogQuery] = useState("");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const computeForAmount = (per100Value) => {
+    const amount = parseFloat(item.amount_grams) || 0;
+    const per100 = parseFloat(per100Value) || 0;
+    return ((amount / 100) * per100).toFixed(1);
+  };
 
   const filteredFoods = useMemo(() => {
     const query = catalogQuery.trim().toLowerCase();
@@ -14,6 +21,32 @@ function FoodItemRow({ item, foods, onChange, onRemove }) {
     () => foods.find((food) => String(food.id) === String(item.food_item_id)),
     [foods, item.food_item_id],
   );
+
+  useEffect(() => {
+    if (item.mode !== "catalog") return;
+    setCatalogQuery(selectedFood?.name || "");
+  }, [selectedFood, item.mode]);
+
+  useEffect(() => {
+    if (item.mode !== "catalog") {
+      setIsDropdownOpen(false);
+    }
+  }, [item.mode]);
+
+  const handleSelectFood = (food) => {
+    onChange({
+      ...item,
+      food_item_id: String(food.id),
+      custom_name: "",
+    });
+    setCatalogQuery(food.name);
+    setIsDropdownOpen(false);
+  };
+
+  const showDropdown =
+    item.mode === "catalog" &&
+    isDropdownOpen &&
+    catalogQuery.trim().length >= 2;
 
   return (
     <div className="nutrition-item-row card">
@@ -42,36 +75,69 @@ function FoodItemRow({ item, foods, onChange, onRemove }) {
         </button>
       </div>
 
-      <div className="form-row nutrition-item-main-row">
+      <div className="nutrition-item-main-row">
         {item.mode === "catalog" ? (
-          <>
-            <div className="form-group">
-              <label>Pretraga kataloga</label>
-              <input
-                type="text"
-                value={catalogQuery}
-                onChange={(e) => setCatalogQuery(e.target.value)}
-                placeholder="Traži namirnicu ili jelo..."
-              />
+          <div
+            className="meal-item-search-wrapper"
+            style={{ margin: "20px 0" }}
+          >
+            <div className="food-search-input-wrapper">
+              <div className="form-group">
+                <FiSearch size={14} className="food-search-icon" />
+                <input
+                  type="text"
+                  className="form-control"
+                  value={catalogQuery}
+                  onChange={(e) => {
+                    const nextValue = e.target.value;
+                    setCatalogQuery(nextValue);
+                    setIsDropdownOpen(true);
+
+                    if (!nextValue.trim()) {
+                      setIsDropdownOpen(false);
+                      onChange({
+                        ...item,
+                        food_item_id: "",
+                      });
+                    }
+                  }}
+                  onFocus={() => {
+                    if (catalogQuery.trim().length >= 2) {
+                      setIsDropdownOpen(true);
+                    }
+                  }}
+                  placeholder="Traži namirnicu ili jelo..."
+                />
+              </div>
             </div>
 
-            <div className="form-group">
-              <label>Namirnica / jelo</label>
-              <select
-                value={item.food_item_id}
-                onChange={(e) =>
-                  onChange({ ...item, food_item_id: e.target.value })
-                }
-              >
-                <option value="">Izaberi iz kataloga...</option>
-                {filteredFoods.map((food) => (
-                  <option key={food.id} value={food.id}>
-                    {food.name} ({food.kcal_per_100g} kcal / 100g)
-                  </option>
+            {showDropdown && (
+              <div className="food-search-dropdown">
+                {filteredFoods.slice(0, 8).map((food) => (
+                  <button
+                    key={food.id}
+                    type="button"
+                    className="food-search-option"
+                    onClick={() => handleSelectFood(food)}
+                  >
+                    <span className="food-option-name">{food.name}</span>
+                    <span className="food-option-macros">
+                      {parseFloat(food.kcal_per_100g)} kcal/100g
+                    </span>
+                  </button>
                 ))}
-              </select>
-            </div>
-          </>
+
+                {filteredFoods.length === 0 && (
+                  <div
+                    className="food-search-option"
+                    style={{ cursor: "default" }}
+                  >
+                    <span className="food-option-name">Nema rezultata</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         ) : (
           <div className="form-group">
             <label>Naziv (ručni unos)</label>
@@ -102,10 +168,10 @@ function FoodItemRow({ item, foods, onChange, onRemove }) {
 
       {item.mode === "catalog" && selectedFood && (
         <div className="nutrition-food-preview">
-          <span>{selectedFood.kcal_per_100g} kcal / 100g</span>
-          <span>P {selectedFood.protein_per_100g} g</span>
-          <span>UH {selectedFood.carbs_per_100g} g</span>
-          <span>M {selectedFood.fat_per_100g} g</span>
+          <span>{computeForAmount(selectedFood.kcal_per_100g)} kcal</span>
+          <span>P {computeForAmount(selectedFood.protein_per_100g)} g</span>
+          <span>UH {computeForAmount(selectedFood.carbs_per_100g)} g</span>
+          <span>M {computeForAmount(selectedFood.fat_per_100g)} g</span>
         </div>
       )}
 

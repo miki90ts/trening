@@ -711,6 +711,10 @@ a {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.form-grid.four-cols {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .form-card {
   margin-bottom: 32px;
 }
@@ -5330,7 +5334,7 @@ a {
    PLAN BUILDER PAGE (full page view)
    ===================================================== */
 .plan-builder-page {
-  max-width: 860px;
+  max-width: 1440;
   margin: 0 auto;
 }
 .plan-builder-page .page-header {
@@ -5854,10 +5858,11 @@ a {
 /* Sets table */
 .session-sets-table {
   width: 100%;
+  margin-bottom: 1rem;
 }
 .session-sets-header {
   display: grid;
-  grid-template-columns: 40px 1.5fr 1fr 1fr 44px 28px;
+  grid-template-columns: 1fr 1fr 1fr 1fr 44px 28px;
   gap: 0.5rem;
   padding: 0.3rem 0;
   font-size: 0.75rem;
@@ -5870,7 +5875,7 @@ a {
 
 .session-set-row {
   display: grid;
-  grid-template-columns: 40px 1.5fr 1fr 1fr 44px 28px;
+  grid-template-columns: 1fr 1fr 1fr 1fr 44px 28px;
   gap: 0.5rem;
   padding: 0.5rem 0;
   align-items: center;
@@ -7130,7 +7135,6 @@ a {
 }
 .meal-food-search-dropdown {
   position: absolute;
-  top: 100%;
   left: 0;
   right: 0;
   max-height: 200px;
@@ -7522,14 +7526,13 @@ a {
   z-index: 1;
 }
 .food-search-input-wrapper .form-group {
-  margin-bottom: 0;
+  margin-bottom: 5px;
 }
 .food-search-input-wrapper .form-control {
   padding-left: 2rem;
 }
 .food-search-dropdown {
   position: absolute;
-  top: calc(100% + 0.25rem);
   left: 0;
   right: 0;
   max-height: 220px;
@@ -7593,6 +7596,11 @@ a {
   .meal-item-macros-row {
     grid-template-columns: 1fr;
   }
+}
+.meal-add-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 .mt-1 {
   margin-top: 0.25rem;

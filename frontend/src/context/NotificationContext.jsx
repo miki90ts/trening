@@ -17,9 +17,6 @@ const REMINDER_OFFSET = 15 * 60 * 1000; // 15 min pre zakazanog vremena
 export function NotificationProvider({ children }) {
   const { isAuthenticated } = useAuth();
 
-  // Stari state (scheduled workouts za today)
-  const [todayItems, setTodayItems] = useState([]);
-
   // Novi state (generičke notifikacije iz notifications tabele)
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -42,17 +39,6 @@ export function NotificationProvider({ children }) {
     }
   }, []);
 
-  // Učitaj zakazane za danas (stari flow)
-  const refreshSchedule = useCallback(async () => {
-    if (!isAuthenticated) return;
-    try {
-      const items = await api.getTodaySchedule();
-      setTodayItems(items);
-    } catch {
-      // noop
-    }
-  }, [isAuthenticated]);
-
   // Učitaj notifikacije i unread count (novi flow)
   const refreshNotifications = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -70,40 +56,11 @@ export function NotificationProvider({ children }) {
 
   // Refresh sve
   const refreshAll = useCallback(async () => {
-    await refreshSchedule();
     await refreshNotifications();
-  }, [refreshSchedule, refreshNotifications]);
+  }, [refreshNotifications]);
 
   // Combinovani unread count (notifikacije + pending scheduled)
-  const combinedUnreadCount =
-    unreadCount + todayItems.filter((i) => !i.is_completed).length;
-
-  // Proveri da li treba poslati browser notifikaciju (za scheduled workouts)
-  const checkReminders = useCallback(() => {
-    if (!permissionGranted) return;
-
-    const now = new Date();
-    todayItems.forEach((item) => {
-      if (item.is_completed || !item.scheduled_time) return;
-      if (sentReminders.current.has(item.id)) return;
-
-      const [hours, minutes] = item.scheduled_time.split(":").map(Number);
-      const scheduledTime = new Date();
-      scheduledTime.setHours(hours, minutes, 0, 0);
-
-      const diff = scheduledTime.getTime() - now.getTime();
-
-      if (diff <= REMINDER_OFFSET && diff > -60000) {
-        sentReminders.current.add(item.id);
-        new Notification("🏋️ Podsetnik za trening", {
-          body: `${item.exercise_icon} ${item.exercise_name} — ${item.category_name}${item.title ? ` (${item.title})` : ""} u ${item.scheduled_time.slice(0, 5)}`,
-          icon: "/favicon.ico",
-          tag: `workout-${item.id}`,
-          requireInteraction: true,
-        });
-      }
-    });
-  }, [todayItems, permissionGranted]);
+  const combinedUnreadCount = unreadCount;
 
   // Označi sve notifikacije kao pročitane
   const markAllRead = useCallback(async () => {
@@ -129,18 +86,6 @@ export function NotificationProvider({ children }) {
     }
   }, []);
 
-  // Označi zakazani trening kao završen
-  const markComplete = useCallback(async (id) => {
-    try {
-      await api.completeScheduledWorkout(id);
-      setTodayItems((prev) =>
-        prev.map((i) => (i.id === id ? { ...i, is_completed: 1 } : i)),
-      );
-    } catch {
-      // noop
-    }
-  }, []);
-
   const toggleDropdown = useCallback(() => {
     setDropdownOpen((prev) => !prev);
   }, []);
@@ -152,45 +97,24 @@ export function NotificationProvider({ children }) {
   // Na mount: zatraži dozvolu, učitaj podatke, pokreni polling
   useEffect(() => {
     if (!isAuthenticated) {
-      setTodayItems([]);
       setNotifications([]);
       setUnreadCount(0);
       return;
     }
 
     requestPermission();
-    refreshSchedule();
     refreshNotifications();
 
     intervalRef.current = setInterval(() => {
-      refreshSchedule();
       refreshNotifications();
     }, POLL_INTERVAL);
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [
-    isAuthenticated,
-    requestPermission,
-    refreshSchedule,
-    refreshNotifications,
-  ]);
-
-  // Proveri podsetnike svaki minut
-  useEffect(() => {
-    if (!isAuthenticated || todayItems.length === 0) return;
-
-    checkReminders();
-    const reminderInterval = setInterval(checkReminders, 60000);
-    return () => clearInterval(reminderInterval);
-  }, [isAuthenticated, todayItems, checkReminders]);
+  }, [isAuthenticated, requestPermission, refreshNotifications]);
 
   const value = {
-    // Schedule (stari workflow)
-    todayItems,
-    markComplete,
-
     // Notifications (novi workflow)
     notifications,
     unreadCount: combinedUnreadCount,

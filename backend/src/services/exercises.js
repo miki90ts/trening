@@ -85,6 +85,32 @@ async function updateExercise(id, body, file) {
 }
 
 async function deleteExercise(id) {
+  const [categoryRows] = await pool.query(
+    "SELECT id, name FROM categories WHERE exercise_id = ?",
+    [id],
+  );
+
+  if (categoryRows.length > 0) {
+    const categoryIds = categoryRows.map((category) => category.id);
+    const placeholders = categoryIds.map(() => "?").join(", ");
+
+    const [workoutRows] = await pool.query(
+      `SELECT COUNT(*) AS total
+       FROM workouts
+       WHERE category_id IN (${placeholders})`,
+      categoryIds,
+    );
+
+    const totalWorkouts = parseInt(workoutRows[0]?.total, 10) || 0;
+
+    if (totalWorkouts > 0) {
+      throw httpError(
+        400,
+        "Vežba ne može da se obriše zato što njene kategorije imaju povezane workout-e.",
+      );
+    }
+  }
+
   const [result] = await pool.query("DELETE FROM exercises WHERE id = ?", [id]);
   if (result.affectedRows === 0) {
     throw httpError(404, "Exercise not found");
