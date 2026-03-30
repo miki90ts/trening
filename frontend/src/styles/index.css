@@ -6937,6 +6937,76 @@ a {
   gap: 0.4rem;
 }
 
+.medical-events-filters-card {
+  margin-bottom: 1rem;
+}
+
+.medical-events-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.medical-event-form-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.medical-event-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.medical-event-badge--illness {
+  background: rgba(245, 158, 11, 0.16);
+  color: #b45309;
+}
+
+.medical-event-badge--injury {
+  background: rgba(239, 68, 68, 0.14);
+  color: #b91c1c;
+}
+
+.medical-event-badge--operation {
+  background: rgba(14, 165, 233, 0.14);
+  color: #0369a1;
+}
+
+.medical-event-badge--default {
+  background: rgba(99, 102, 241, 0.14);
+  color: var(--accent-primary);
+}
+
+.medical-event-note {
+  max-width: 360px;
+  white-space: normal;
+}
+
+.calendar-medical-note {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+
+.workout-dot--medical {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.75);
+}
+
+@media (max-width: 900px) {
+  .medical-events-filter-grid,
+  .medical-event-form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ===== SLEEP TRACKING ===== */
 .sleep-charts-grid {
   display: grid;

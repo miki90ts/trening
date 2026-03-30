@@ -344,6 +344,16 @@ export const getSleepStreak = () =>
   api.get("/sleep/streak").then((r) => r.data);
 export const getSleepGoal = () => api.get("/sleep/goal").then((r) => r.data);
 
+// ======== MEDICAL EVENTS ========
+export const getMedicalEvents = (params = {}) =>
+  api.get("/medical-events", { params }).then((r) => r.data);
+export const createMedicalEvent = (data) =>
+  api.post("/medical-events", data).then((r) => r.data);
+export const updateMedicalEvent = (id, data) =>
+  api.put(`/medical-events/${id}`, data).then((r) => r.data);
+export const deleteMedicalEvent = (id) =>
+  api.delete(`/medical-events/${id}`).then((r) => r.data);
+
 // ======== ACTIVITY TYPES ========
 export const getActivityTypes = (params = {}) =>
   api.get("/activity-types", { params }).then((r) => r.data);

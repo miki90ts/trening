@@ -12,6 +12,11 @@ import {
   formatDuration,
   formatPace,
 } from "../activity/activityUtils";
+import {
+  formatMedicalEventDateRange,
+  getMedicalEventDurationDays,
+  getMedicalEventMeta,
+} from "../medicalEvents/medicalEventUtils";
 
 const DAY_NAMES = [
   "Nedelja",
@@ -48,6 +53,7 @@ function CalendarDayDetail({ selectedDate, calendarData }) {
     sessions: [],
     mealSessions: [],
     activitySessions: [],
+    medicalEvents: [],
   };
   const dateObj = new Date(selectedDate + "T00:00:00");
   const dayName = DAY_NAMES[dateObj.getDay()];
@@ -140,6 +146,75 @@ function CalendarDayDetail({ selectedDate, calendarData }) {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {dayData.medicalEvents && dayData.medicalEvents.length > 0 && (
+        <div className="calendar-day-section">
+          <h4 className="calendar-day-section-title">
+            🏥 Zdravstveni događaji ({dayData.medicalEvents.length})
+          </h4>
+          <div className="calendar-day-items">
+            {dayData.medicalEvents.map((medicalEvent) => {
+              const meta = getMedicalEventMeta(medicalEvent.event_type);
+              const durationDays = getMedicalEventDurationDays(
+                medicalEvent.start_date,
+                medicalEvent.end_date,
+              );
+
+              return (
+                <div
+                  key={medicalEvent.id}
+                  className="calendar-workout-item calendar-workout-item--clickable"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() =>
+                    navigate(
+                      `/metrics/medical-events?date=${selectedDate}&eventId=${medicalEvent.id}`,
+                    )
+                  }
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      navigate(
+                        `/metrics/medical-events?date=${selectedDate}&eventId=${medicalEvent.id}`,
+                      );
+                    }
+                  }}
+                  title="Otvori medicinski događaj"
+                >
+                  <div
+                    className="schedule-item-color"
+                    style={{ backgroundColor: meta.color }}
+                  />
+                  <div className="calendar-workout-info">
+                    <span className="schedule-item-icon">{meta.icon}</span>
+                    <div>
+                      <span className="schedule-item-exercise">
+                        {medicalEvent.title}
+                      </span>
+                      <span className="schedule-item-category">
+                        {meta.label} •{" "}
+                        {formatMedicalEventDateRange(
+                          medicalEvent.start_date,
+                          medicalEvent.end_date,
+                        )}
+                      </span>
+                      {medicalEvent.notes ? (
+                        <span className="calendar-medical-note">
+                          {medicalEvent.notes}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                  <div className="calendar-workout-score">
+                    <strong>{durationDays}</strong>
+                    <span>{durationDays === 1 ? "dan" : "dana"}</span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

@@ -9,6 +9,31 @@ const SCORE_SQL = `
   END
 `;
 
+function getMonthBounds(month) {
+  const [year, monthNumber] = month.split("-").map(Number);
+  const monthStart = `${month}-01`;
+  const monthEnd = toYmd(new Date(year, monthNumber, 0));
+  return { monthStart, monthEnd };
+}
+
+function parseYmdUtc(value) {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
+function getDateRangeKeys(startDate, endDate) {
+  const keys = [];
+  const current = parseYmdUtc(startDate);
+  const end = parseYmdUtc(endDate);
+
+  while (current <= end) {
+    keys.push(current.toISOString().slice(0, 10));
+    current.setUTCDate(current.getUTCDate() + 1);
+  }
+
+  return keys;
+}
+
 function ensureDayBucket(byDate, dateKey) {
   if (!byDate[dateKey]) {
     byDate[dateKey] = {
@@ -17,6 +42,7 @@ function ensureDayBucket(byDate, dateKey) {
       sessions: [],
       mealSessions: [],
       activitySessions: [],
+      medicalEvents: [],
     };
   }
 }
@@ -28,6 +54,7 @@ async function getCalendarMonth(user, query) {
   }
 
   const userId = user.id;
+  const { monthStart, monthEnd } = getMonthBounds(month);
 
   const [workouts] = await pool.query(
     `
@@ -108,6 +135,21 @@ async function getCalendarMonth(user, query) {
     [userId, month],
   );
 
+  const [medicalEvents] = await pool.query(
+    `
+      SELECT id, event_type, title,
+             DATE_FORMAT(start_date, '%Y-%m-%d') AS start_date,
+             DATE_FORMAT(end_date, '%Y-%m-%d') AS end_date,
+             notes
+      FROM medical_events
+      WHERE user_id = ?
+        AND start_date <= ?
+        AND end_date >= ?
+      ORDER BY start_date ASC, end_date ASC, created_at ASC
+    `,
+    [userId, monthEnd, monthStart],
+  );
+
   const byDate = {};
 
   for (const workout of workouts) {
@@ -138,6 +180,20 @@ async function getCalendarMonth(user, query) {
     const dateKey = toYmd(activitySession.scheduled_date);
     ensureDayBucket(byDate, dateKey);
     byDate[dateKey].activitySessions.push(activitySession);
+  }
+
+  for (const medicalEvent of medicalEvents) {
+    const rangeStart =
+      medicalEvent.start_date > monthStart
+        ? medicalEvent.start_date
+        : monthStart;
+    const rangeEnd =
+      medicalEvent.end_date < monthEnd ? medicalEvent.end_date : monthEnd;
+
+    for (const dateKey of getDateRangeKeys(rangeStart, rangeEnd)) {
+      ensureDayBucket(byDate, dateKey);
+      byDate[dateKey].medicalEvents.push(medicalEvent);
+    }
   }
 
   return byDate;

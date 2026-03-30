@@ -25,6 +25,7 @@ const mealPlansRouter = require("./routes/mealPlans");
 const stepsRouter = require("./routes/steps");
 const hydrationRouter = require("./routes/hydration");
 const sleepRouter = require("./routes/sleep");
+const medicalEventsRouter = require("./routes/medicalEvents");
 const notificationsRouter = require("./routes/notifications");
 const cronRouter = require("./routes/cron");
 
@@ -62,6 +63,7 @@ app.use("/api/meal-plans", mealPlansRouter);
 app.use("/api/steps", stepsRouter);
 app.use("/api/hydration", hydrationRouter);
 app.use("/api/sleep", sleepRouter);
+app.use("/api/medical-events", medicalEventsRouter);
 app.use("/api/notifications", notificationsRouter);
 app.use("/api/cron", cronRouter);
 

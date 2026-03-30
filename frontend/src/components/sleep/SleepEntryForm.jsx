@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { toYmd } from "./sleepUtils";
 
-function SleepEntryForm({ initialData, isSubmitting, onSubmit, onCancel, currentTarget }) {
+function SleepEntryForm({
+  initialData,
+  isSubmitting,
+  onSubmit,
+  onCancel,
+  currentTarget,
+}) {
   const [sleepDate, setSleepDate] = useState(toYmd(new Date()));
   const [bedtime, setBedtime] = useState("");
   const [wakeTime, setWakeTime] = useState("");
@@ -18,9 +24,15 @@ function SleepEntryForm({ initialData, isSubmitting, onSubmit, onCancel, current
 
   useEffect(() => {
     if (initialData) {
-      setSleepDate(initialData.sleep_date ? toYmd(initialData.sleep_date) : toYmd(new Date()));
+      setSleepDate(
+        initialData.sleep_date
+          ? toYmd(initialData.sleep_date)
+          : toYmd(new Date()),
+      );
       setBedtime(initialData.bedtime ? initialData.bedtime.slice(0, 5) : "");
-      setWakeTime(initialData.wake_time ? initialData.wake_time.slice(0, 5) : "");
+      setWakeTime(
+        initialData.wake_time ? initialData.wake_time.slice(0, 5) : "",
+      );
       setAwakeMin(initialData.awake_min ?? "");
       setRemMin(initialData.rem_min ?? "");
       setLightMin(initialData.light_min ?? "");
@@ -97,12 +109,28 @@ function SleepEntryForm({ initialData, isSubmitting, onSubmit, onCancel, current
       <div className="sleep-form-row">
         <div className="form-group">
           <label className="form-label">Datum</label>
-          <input type="date" className="form-control" value={sleepDate} onChange={(e) => setSleepDate(e.target.value)} required />
+          <input
+            type="date"
+            className="form-control"
+            value={sleepDate}
+            onChange={(e) => setSleepDate(e.target.value)}
+            required
+          />
         </div>
         <div className="form-group">
           <label className="form-label">Cilj spavanja (min)</label>
-          <input type="number" className="form-control" value={targetMin} onChange={(e) => setTargetMin(e.target.value)} min="0" step="30" placeholder="480" />
-          <small className="form-hint">{targetHours}h {targetMins}m</small>
+          <input
+            type="number"
+            className="form-control"
+            value={targetMin}
+            onChange={(e) => setTargetMin(e.target.value)}
+            min="0"
+            step="30"
+            placeholder="480"
+          />
+          <small className="form-hint">
+            {targetHours}h {targetMins}m
+          </small>
         </div>
       </div>
 
@@ -110,16 +138,28 @@ function SleepEntryForm({ initialData, isSubmitting, onSubmit, onCancel, current
       <div className="sleep-form-row">
         <div className="form-group">
           <label className="form-label">🛏️ Vreme ležanja</label>
-          <input type="time" className="form-control" value={bedtime} onChange={(e) => setBedtime(e.target.value)} />
+          <input
+            type="time"
+            className="form-control"
+            value={bedtime}
+            onChange={(e) => setBedtime(e.target.value)}
+          />
         </div>
         <div className="form-group">
           <label className="form-label">⏰ Vreme buđenja</label>
-          <input type="time" className="form-control" value={wakeTime} onChange={(e) => setWakeTime(e.target.value)} />
+          <input
+            type="time"
+            className="form-control"
+            value={wakeTime}
+            onChange={(e) => setWakeTime(e.target.value)}
+          />
         </div>
         {computedDuration && (
           <div className="form-group">
             <label className="form-label">&nbsp;</label>
-            <span className="sleep-duration-preview">{formatDurationPreview(computedDuration)}</span>
+            <span className="sleep-duration-preview">
+              {formatDurationPreview(computedDuration)}
+            </span>
           </div>
         )}
       </div>
@@ -130,19 +170,47 @@ function SleepEntryForm({ initialData, isSubmitting, onSubmit, onCancel, current
         <div className="sleep-form-row sleep-form-phases">
           <div className="form-group">
             <label className="form-label">Awake (min)</label>
-            <input type="number" className="form-control" value={awakeMin} onChange={(e) => setAwakeMin(e.target.value)} min="0" placeholder="0" />
+            <input
+              type="number"
+              className="form-control"
+              value={awakeMin}
+              onChange={(e) => setAwakeMin(e.target.value)}
+              min="0"
+              placeholder="0"
+            />
           </div>
           <div className="form-group">
             <label className="form-label">REM (min)</label>
-            <input type="number" className="form-control" value={remMin} onChange={(e) => setRemMin(e.target.value)} min="0" placeholder="0" />
+            <input
+              type="number"
+              className="form-control"
+              value={remMin}
+              onChange={(e) => setRemMin(e.target.value)}
+              min="0"
+              placeholder="0"
+            />
           </div>
           <div className="form-group">
             <label className="form-label">Light (min)</label>
-            <input type="number" className="form-control" value={lightMin} onChange={(e) => setLightMin(e.target.value)} min="0" placeholder="0" />
+            <input
+              type="number"
+              className="form-control"
+              value={lightMin}
+              onChange={(e) => setLightMin(e.target.value)}
+              min="0"
+              placeholder="0"
+            />
           </div>
           <div className="form-group">
             <label className="form-label">Deep (min)</label>
-            <input type="number" className="form-control" value={deepMin} onChange={(e) => setDeepMin(e.target.value)} min="0" placeholder="0" />
+            <input
+              type="number"
+              className="form-control"
+              value={deepMin}
+              onChange={(e) => setDeepMin(e.target.value)}
+              min="0"
+              placeholder="0"
+            />
           </div>
         </div>
       </details>
@@ -153,19 +221,52 @@ function SleepEntryForm({ initialData, isSubmitting, onSubmit, onCancel, current
         <div className="sleep-form-row">
           <div className="form-group">
             <label className="form-label">Kvalitet sna (%)</label>
-            <input type="number" className="form-control" value={sleepQuality} onChange={(e) => setSleepQuality(e.target.value)} min="0" max="100" step="1" placeholder="npr. 85" />
+            <input
+              type="number"
+              className="form-control"
+              value={sleepQuality}
+              onChange={(e) => setSleepQuality(e.target.value)}
+              min="0"
+              max="100"
+              step="1"
+              placeholder="npr. 85"
+            />
           </div>
           <div className="form-group">
             <label className="form-label">Avg HR (bpm)</label>
-            <input type="number" className="form-control" value={avgHr} onChange={(e) => setAvgHr(e.target.value)} min="30" max="200" placeholder="npr. 55" />
+            <input
+              type="number"
+              className="form-control"
+              value={avgHr}
+              onChange={(e) => setAvgHr(e.target.value)}
+              min="30"
+              max="200"
+              placeholder="npr. 55"
+            />
           </div>
           <div className="form-group">
             <label className="form-label">Min HR (bpm)</label>
-            <input type="number" className="form-control" value={minHr} onChange={(e) => setMinHr(e.target.value)} min="25" max="200" placeholder="npr. 42" />
+            <input
+              type="number"
+              className="form-control"
+              value={minHr}
+              onChange={(e) => setMinHr(e.target.value)}
+              min="25"
+              max="200"
+              placeholder="npr. 42"
+            />
           </div>
           <div className="form-group">
             <label className="form-label">Avg HRV (ms)</label>
-            <input type="number" className="form-control" value={avgHrv} onChange={(e) => setAvgHrv(e.target.value)} min="0" max="300" placeholder="npr. 52" />
+            <input
+              type="number"
+              className="form-control"
+              value={avgHrv}
+              onChange={(e) => setAvgHrv(e.target.value)}
+              min="0"
+              max="300"
+              placeholder="npr. 52"
+            />
           </div>
         </div>
       </details>
@@ -173,14 +274,26 @@ function SleepEntryForm({ initialData, isSubmitting, onSubmit, onCancel, current
       {/* Notes */}
       <div className="form-group">
         <label className="form-label">Napomena</label>
-        <textarea className="form-control" value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="Opciono..." />
+        <textarea
+          className="form-control"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          rows={2}
+          placeholder="Opciono..."
+        />
       </div>
 
       <div className="form-actions">
-        <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-          {isSubmitting ? "Čuvam..." : initialData ? "Sačuvaj izmene" : "Dodaj"}
+        <button type="button" className="btn btn-ghost" onClick={onCancel}>
+          Otkaži
         </button>
-        <button type="button" className="btn btn-ghost" onClick={onCancel}>Otkaži</button>
+        <button
+          type="submit"
+          className="btn btn-primary"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? "Čuvanje..." : "Sačuvaj"}
+        </button>
       </div>
     </form>
   );

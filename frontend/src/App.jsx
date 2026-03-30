@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import Navbar from "./components/layout/Navbar";
 import ProtectedRoute from "./components/common/ProtectedRoute";
+import PublicRoute from "./components/common/PublicRoute";
 import Dashboard from "./pages/Dashboard";
 import UsersPage from "./pages/UsersPage";
 import ExercisesPage from "./pages/ExercisesPage";
@@ -32,6 +33,7 @@ import SessionDetailPage from "./pages/SessionDetailPage";
 import StepsPage from "./pages/StepsPage";
 import HydrationPage from "./pages/HydrationPage";
 import SleepPage from "./pages/SleepPage";
+import MedicalEventsPage from "./pages/MedicalEventsPage";
 import ImportActivityPage from "./pages/ImportActivityPage";
 import MealPlansPage from "./pages/MealPlansPage";
 import MealPlanBuilderPage from "./pages/MealPlanBuilderPage";
@@ -52,8 +54,22 @@ function App() {
       >
         <Routes>
           {/* Javne rute */}
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+          <Route
+            path="/login"
+            element={
+              <PublicRoute>
+                <LoginPage />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <PublicRoute>
+                <RegisterPage />
+              </PublicRoute>
+            }
+          />
 
           {/* Zaštićene rute */}
           <Route
@@ -173,6 +189,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <SleepPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/metrics/medical-events"
+            element={
+              <ProtectedRoute>
+                <MedicalEventsPage />
               </ProtectedRoute>
             }
           />

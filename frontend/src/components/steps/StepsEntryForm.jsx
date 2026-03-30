@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { toYmd } from "./stepsUtils";
 
-function StepsEntryForm({ initialData, isSubmitting, onSubmit, onCancel, currentGoal }) {
+function StepsEntryForm({
+  initialData,
+  isSubmitting,
+  onSubmit,
+  onCancel,
+  currentGoal,
+}) {
   const [stepDate, setStepDate] = useState(toYmd(new Date()));
   const [stepCount, setStepCount] = useState("");
   const [goal, setGoal] = useState(currentGoal || 10000);
@@ -9,7 +15,11 @@ function StepsEntryForm({ initialData, isSubmitting, onSubmit, onCancel, current
 
   useEffect(() => {
     if (initialData) {
-      setStepDate(initialData.step_date ? toYmd(initialData.step_date) : toYmd(new Date()));
+      setStepDate(
+        initialData.step_date
+          ? toYmd(initialData.step_date)
+          : toYmd(new Date()),
+      );
       setStepCount(initialData.step_count ?? "");
       setGoal(initialData.goal ?? currentGoal ?? 10000);
       setNotes(initialData.notes || "");
@@ -80,11 +90,15 @@ function StepsEntryForm({ initialData, isSubmitting, onSubmit, onCancel, current
         />
       </div>
       <div className="form-actions">
-        <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-          {isSubmitting ? "Čuvam..." : initialData ? "Sačuvaj izmene" : "Dodaj"}
-        </button>
         <button type="button" className="btn btn-ghost" onClick={onCancel}>
           Otkaži
+        </button>
+        <button
+          type="submit"
+          className="btn btn-primary"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? "Čuvanje..." : "Sačuvaj"}
         </button>
       </div>
     </form>

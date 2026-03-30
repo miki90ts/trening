@@ -1,5 +1,6 @@
 import React from "react";
 import WorkoutDot from "./WorkoutDot";
+import { getMedicalEventMeta } from "../medicalEvents/medicalEventUtils";
 
 const DAY_NAMES = ["Pon", "Uto", "Sre", "Čet", "Pet", "Sub", "Ned"];
 
@@ -40,6 +41,7 @@ function CalendarGrid({
       sessions: [],
       mealSessions: [],
       activitySessions: [],
+      medicalEvents: [],
     };
     cells.push({ day, dateStr, ...dayData, key: dateStr });
   }
@@ -77,13 +79,16 @@ function CalendarGrid({
             cell.mealSessions && cell.mealSessions.length > 0;
           const hasActivitySessions =
             cell.activitySessions && cell.activitySessions.length > 0;
+          const hasMedicalEvents =
+            cell.medicalEvents && cell.medicalEvents.length > 0;
           const hasEvents =
             hasWorkouts ||
             hasActivities ||
             hasScheduled ||
             hasSessions ||
             hasMealSessions ||
-            hasActivitySessions;
+            hasActivitySessions ||
+            hasMedicalEvents;
 
           return (
             <div
@@ -167,12 +172,25 @@ function CalendarGrid({
                         }
                       />
                     ))}
+                {hasMedicalEvents &&
+                  cell.medicalEvents.slice(0, 2).map((medicalEvent, i) => {
+                    const meta = getMedicalEventMeta(medicalEvent.event_type);
+                    return (
+                      <WorkoutDot
+                        key={`me-${medicalEvent.id || i}`}
+                        color={meta.color}
+                        title={`${meta.icon} ${meta.label} - ${medicalEvent.title}`}
+                        type="medical"
+                      />
+                    );
+                  })}
                 {(cell.workouts?.length > 3 ||
                   cell.activities?.length > 3 ||
                   cell.scheduled?.length > 3 ||
                   cell.sessions?.length > 3 ||
                   cell.mealSessions?.length > 2 ||
-                  cell.activitySessions?.length > 2) && (
+                  cell.activitySessions?.length > 2 ||
+                  cell.medicalEvents?.length > 2) && (
                   <span className="calendar-cell-more">+</span>
                 )}
               </div>
